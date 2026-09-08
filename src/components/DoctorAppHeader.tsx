@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Sun,
   Moon,
   Globe,
   FileDown,
   BookOpen,
-  Key
+  Settings
 } from 'lucide-react';
 import { getAssetPath } from '../utils/assetHelper';
 
@@ -31,10 +31,26 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
   onToggleLang,
   onOpenPreOpModal,
   onOpenKnowledgeBase,
-  onOpenApiKeys,
+  onOpenApiKeys: _onOpenApiKeys,
   hasCriticalConflicts: _hasCriticalConflicts
 }) => {
   const isAr = lang === 'ar';
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    };
+    if (isSettingsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSettingsOpen]);
 
   return (
     <header
@@ -74,25 +90,6 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
               display: 'block'
             }}
           />
-        </div>
-
-        {/* NPHIES Compliance Status */}
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            padding: '0.2rem 0.6rem',
-            background: 'rgba(155, 205, 185, 0.15)',
-            border: '1px solid rgba(155, 205, 185, 0.4)',
-            borderRadius: 'var(--radius-full)',
-            fontSize: '0.68rem',
-            fontWeight: 600,
-            color: 'var(--mint-dark)'
-          }}
-        >
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--mint)' }} />
-          <span>{isAr ? 'متوافق مع معايير نَفيس (NPHIES)' : 'NPHIES / FHIR R4 Ready'}</span>
         </div>
       </div>
 
@@ -178,32 +175,6 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
           </button>
         )}
 
-        {/* API Keys Configuration Trigger */}
-        {onOpenApiKeys && (
-          <button
-            onClick={onOpenApiKeys}
-            style={{
-              background: 'rgba(155, 205, 185, 0.15)',
-              color: 'var(--mint-dark, #065F46)',
-              border: '1px solid rgba(155, 205, 185, 0.4)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.4rem 0.75rem',
-              fontSize: '0.76rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              fontFamily: 'var(--font-heading)',
-              transition: 'all 160ms ease'
-            }}
-            title={isAr ? 'إدخال مفاتيح الـ API (OpenRouter & Speechmatics)' : 'Configure API Keys'}
-          >
-            <Key size={16} strokeWidth={2} style={{ color: '#059669', flexShrink: 0 }} />
-            <span>{isAr ? 'مفاتيح الـ API' : 'API Keys'}</span>
-          </button>
-        )}
-
         {/* Pre-Op Clearance Summary Modal Trigger */}
         <button
           onClick={onOpenPreOpModal}
@@ -228,86 +199,171 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
           <span>{isAr ? 'تقرير التقييم السريري' : 'Clinical Report'}</span>
         </button>
 
-        {/* Font Scaling Controls (A, A+, A++) */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            background: 'var(--bg)',
-            border: '1px solid var(--line)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '2px'
-          }}
-          title={isAr ? 'التحكم بحجم الخط' : 'Adjust Font Scale'}
-        >
-          {[
-            { label: 'A', scale: 1 },
-            { label: 'A+', scale: 1.1 },
-            { label: 'A++', scale: 1.2 }
-          ].map((item) => (
-            <button
-              key={item.label}
-              onClick={() => onChangeFontScale(item.scale)}
+        {/* Unified Settings Button & Preferences Popover (Language, Mode, Font Scale) */}
+        <div ref={settingsRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setIsSettingsOpen((prev) => !prev)}
+            style={{
+              background: isSettingsOpen ? 'rgba(79, 70, 229, 0.12)' : 'var(--bg)',
+              border: `1px solid ${isSettingsOpen ? 'var(--primary)' : 'var(--line)'}`,
+              color: isSettingsOpen ? 'var(--primary)' : 'var(--ink-soft)',
+              borderRadius: 'var(--radius-sm)',
+              width: '34px',
+              height: '34px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              transition: 'all 160ms ease'
+            }}
+            title={isAr ? 'الإعدادات والمظهر' : 'Settings & Preferences'}
+          >
+            <Settings
+              size={17}
+              strokeWidth={2}
               style={{
-                background: fontScale === item.scale ? 'var(--violet)' : 'transparent',
-                color: fontScale === item.scale ? '#FFFFFF' : 'var(--ink-soft)',
-                border: 'none',
-                borderRadius: 'var(--radius-xs)',
-                padding: '0.2rem 0.45rem',
-                fontSize: '0.72rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 120ms'
+                transform: isSettingsOpen ? 'rotate(45deg)' : 'none',
+                transition: 'transform 200ms ease'
+              }}
+            />
+          </button>
+
+          {isSettingsOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                [isAr ? 'left' : 'right']: 0,
+                width: '260px',
+                background: 'var(--surface)',
+                border: '1px solid var(--line)',
+                borderRadius: '12px',
+                padding: '0.9rem 1rem',
+                boxShadow: '0 10px 28px rgba(0,0,0,0.14)',
+                zIndex: 1000,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                animation: 'popIn 160ms cubic-bezier(0.16, 1, 0.3, 1)'
               }}
             >
-              {item.label}
-            </button>
-          ))}
+              {/* Dropdown Header */}
+              <div
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  color: 'var(--ink)',
+                  fontFamily: 'var(--font-heading)',
+                  paddingBottom: '0.5rem',
+                  borderBottom: '1px solid var(--line-subtle)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}
+              >
+                <Settings size={14} style={{ color: 'var(--primary)' }} />
+                <span>{isAr ? 'الإعدادات والمظهر' : 'Settings & Preferences'}</span>
+              </div>
+
+              {/* 1. Language Row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: 'var(--ink)', fontWeight: 600 }}>
+                  <Globe size={15} style={{ color: 'var(--primary)' }} />
+                  <span>{isAr ? 'اللغة' : 'Language'}</span>
+                </div>
+                <button
+                  onClick={onToggleLang}
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--line)',
+                    color: 'var(--ink)',
+                    borderRadius: '6px',
+                    padding: '0.28rem 0.75rem',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    transition: 'all 120ms'
+                  }}
+                >
+                  <span>{isAr ? 'English (EN)' : 'العربية (AR)'}</span>
+                </button>
+              </div>
+
+              {/* 2. Theme Mode Row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: 'var(--ink)', fontWeight: 600 }}>
+                  {theme === 'dark' ? <Sun size={15} style={{ color: 'var(--amber)' }} /> : <Moon size={15} style={{ color: 'var(--violet)' }} />}
+                  <span>{isAr ? 'المظهر' : 'Mode'}</span>
+                </div>
+                <button
+                  onClick={onToggleTheme}
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--line)',
+                    color: 'var(--ink)',
+                    borderRadius: '6px',
+                    padding: '0.28rem 0.75rem',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    transition: 'all 120ms'
+                  }}
+                >
+                  {theme === 'dark' ? <Sun size={13} style={{ color: 'var(--amber)' }} /> : <Moon size={13} style={{ color: 'var(--violet)' }} />}
+                  <span>{theme === 'dark' ? (isAr ? 'الوضع النهاري' : 'Light') : (isAr ? 'الوضع الليلي' : 'Dark')}</span>
+                </button>
+              </div>
+
+              {/* 3. Font Scale Row */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--ink)', fontWeight: 600 }}>
+                  {isAr ? 'حجم الخط' : 'Font Size'}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--line)',
+                    borderRadius: '6px',
+                    padding: '2px'
+                  }}
+                >
+                  {[
+                    { label: 'A', scale: 1 },
+                    { label: 'A+', scale: 1.1 },
+                    { label: 'A++', scale: 1.2 }
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={() => onChangeFontScale(item.scale)}
+                      style={{
+                        background: fontScale === item.scale ? 'var(--violet)' : 'transparent',
+                        color: fontScale === item.scale ? '#FFFFFF' : 'var(--ink-soft)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        padding: '0.18rem 0.5rem',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        transition: 'all 120ms'
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Dark / Light Theme Toggle */}
-        <button
-          onClick={onToggleTheme}
-          className="btn-icon"
-          title={theme === 'dark' ? (isAr ? 'تفعيل الوضع النهاري' : 'Light Mode') : (isAr ? 'تفعيل الوضع الليلي الهادئ' : 'Dark Mode')}
-          style={{
-            background: 'var(--bg)',
-            border: '1px solid var(--line)',
-            color: 'var(--ink-soft)',
-            borderRadius: 'var(--radius-sm)',
-            width: '32px',
-            height: '32px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            flexShrink: 0
-          }}
-        >
-          {theme === 'dark' ? <Sun size={16} strokeWidth={2} style={{ color: 'var(--amber)', flexShrink: 0 }} /> : <Moon size={16} strokeWidth={2} style={{ color: 'var(--violet)', flexShrink: 0 }} />}
-        </button>
-
-        {/* Language Toggle (عربي / EN) */}
-        <button
-          onClick={onToggleLang}
-          style={{
-            background: 'var(--bg)',
-            border: '1px solid var(--line)',
-            color: 'var(--ink-soft)',
-            borderRadius: 'var(--radius-sm)',
-            padding: '0.35rem 0.65rem',
-            fontSize: '0.74rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            flexShrink: 0
-          }}
-        >
-          <Globe size={15} strokeWidth={2} style={{ flexShrink: 0 }} />
-          <span>{isAr ? 'EN' : 'عربي'}</span>
-        </button>
       </div>
     </header>
   );
