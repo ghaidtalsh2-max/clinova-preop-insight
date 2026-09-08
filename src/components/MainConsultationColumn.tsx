@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import type { Patient } from '../types/clinical';
 import {
   Mic, Square,
   AlertTriangle, ChevronRight, Sparkles, FileText, HelpCircle, Clock,
-  RotateCcw, CheckCircle2, Loader2, BookOpen, ExternalLink
+  RotateCcw, CheckCircle2, Loader2, BookOpen, ExternalLink, Pill, Heart, Activity, X
 } from 'lucide-react';
 import { SpeechmaticsRealtimeClient } from '../services/speechmaticsRealtime';
 import {
@@ -13,6 +14,7 @@ import {
 import {
   PRESET_CLINICAL_SCENARIOS, type PresetClinicalScenario
 } from '../data/clinicalScenarios';
+import { getAssetPath } from '../utils/assetHelper';
 
 interface Props {
   patient: Patient;
@@ -49,8 +51,22 @@ export const MainConsultationColumn: React.FC<Props> = ({
   const [smartAnswer, setSmartAnswer] = useState<string | null>(null);
   const [answeredQuestionsCount, setAnsweredQuestionsCount] = useState(0);
   const [isScenariosOpen, setIsScenariosOpen] = useState(false);
+  const scenarioBtnRef = useRef<HTMLButtonElement>(null);
+  const [scenarioDropdownPos, setScenarioDropdownPos] = useState<{ top: number; left?: number } | null>(null);
+  const [dismissedContextCards, setDismissedContextCards] = useState<string[]>([]);
   const [activeSpeaker, setActiveSpeaker] = useState<'doctor' | 'patient'>('doctor');
   const activeSpeakerRef = useRef<'doctor' | 'patient'>('doctor');
+
+  const toggleScenarios = () => {
+    if (!isScenariosOpen && scenarioBtnRef.current) {
+      const rect = scenarioBtnRef.current.getBoundingClientRect();
+      setScenarioDropdownPos({
+        top: rect.bottom + 6,
+        left: isAr ? Math.max(16, rect.right - 380) : Math.min(window.innerWidth - 400, rect.left)
+      });
+    }
+    setIsScenariosOpen(!isScenariosOpen);
+  };
 
   useEffect(() => {
     activeSpeakerRef.current = activeSpeaker;
@@ -60,10 +76,11 @@ export const MainConsultationColumn: React.FC<Props> = ({
     transcriptRef.current = transcript;
   }, [transcript]);
 
-  /* Reset answered count when switching patients */
+  /* Reset answered count and dismissed context cards when switching patients */
   useEffect(() => {
     setAnsweredQuestionsCount(0);
     setSmartAnswer(null);
+    setDismissedContextCards([]);
   }, [patient.id]);
 
   /* ─── Timer ─── */
@@ -157,17 +174,12 @@ export const MainConsultationColumn: React.FC<Props> = ({
     }
   };
 
-  /* ─── Select Scenario (Updates Text, Questions & Diagnoses) ─── */
+  /* ─── Select Scenario (Fills transcript only — Item 2 requirement) ─── */
   const handleSelectScenario = (s: PresetClinicalScenario) => {
     const txt = isAr ? s.transcriptAr : s.transcriptEn;
     onChangeTranscript(txt);
-    setAiData(s.analysis);
-    setSmartAnswer(null);
-    setAnsweredQuestionsCount(1);
-    setAnalysisStatus('extracted');
-    if (s.analysis.patientMemoryMatches && onUpdatePatientMemoryMatches) {
-      onUpdatePatientMemoryMatches(s.analysis.patientMemoryMatches);
-    }
+    // aiData is strictly NOT set here — it updates only when clinician clicks "تشغيل التحليل السريري بالذكاء الاصطناعي"
+    setIsScenariosOpen(false);
   };
 
   /* ─── Run Clinical Analysis manually ─── */
@@ -208,6 +220,150 @@ export const MainConsultationColumn: React.FC<Props> = ({
     : aiData?.smartQuestion?.question || fallback.smartQuestion.question;
   const atts = aiData?.whatNeedsAttention || fallback.whatNeedsAttention;
   const poss = aiData?.clinicalPossibilities || fallback.clinicalPossibilities;
+
+  /* ─── Item 5: Real-time Contextual EHR Retrieval & Clinical Assistance ─── */
+  const contextCards = React.useMemo(() => {
+    if (!transcript || transcript.trim().length < 5) return [];
+
+    const cards: Array<{
+      id: string;
+      icon: React.ReactNode;
+      title: string;
+      bg: string;
+      borderColor: string;
+      titleColor: string;
+      content: React.ReactNode;
+    }> = [];
+
+    const lower = transcript.toLowerCase();
+
+    // 1. Medications Retrieval
+    if (/(أدوية|دواء|علاج|حبوب|جرعة|مسكن|أملوديبين|اسبرين|بنادول|medication|drug|dose|rx)/i.test(lower)) {
+      if (patient.medications && patient.medications.length > 0) {
+        cards.push({
+          id: `meds-${patient.id}`,
+          icon: <Pill size={16} color="#D97706" />,
+          title: isAr ? 'الأدوية الموثقة في السجل الصحي للمريض' : 'Documented Current Medications in EHR',
+          bg: '#FFFBEB',
+          borderColor: '#FDE68A',
+          titleColor: '#B45309',
+          content: (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {patient.medications.map((m) => (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                  <span>
+                    <strong>{m.name}</strong> ({m.dose} - {m.frequency})
+                  </span>
+                  <span style={{ fontSize: '0.68rem', color: '#92400E', background: '#FEF3C7', padding: '0.05rem 0.35rem', borderRadius: 4 }}>
+                    {isAr ? m.sectorHospitalAr : m.sectorHospital}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )
+        });
+      }
+    }
+
+    // 2. Allergies Retrieval
+    if (/(حساسية|بنسلين|طفح|تفاعل|حكة|allergy|allergic|penicillin|reaction)/i.test(lower)) {
+      if (patient.allergies && patient.allergies.length > 0) {
+        cards.push({
+          id: `allergies-${patient.id}`,
+          icon: <AlertTriangle size={16} color="#DC2626" />,
+          title: isAr ? 'الحساسية الدوائية الموثقة في السجل' : 'Documented Drug Allergies in EHR',
+          bg: '#FEF2F2',
+          borderColor: '#FECACA',
+          titleColor: '#B91C1C',
+          content: (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {patient.allergies.map((a, i) => (
+                <span key={i} style={{ background: '#FEE2E2', color: '#991B1B', padding: '0.15rem 0.45rem', borderRadius: 4, fontWeight: 600 }}>
+                  {isAr ? a.substanceAr : a.substance} ({a.severity})
+                </span>
+              ))}
+            </div>
+          )
+        });
+      }
+    }
+
+    // 3. Vitals Retrieval
+    if (/(ضغط|حرارة|نبض|أكسجين|تنفس|vitals|pressure|pulse|bp|heart rate)/i.test(lower)) {
+      cards.push({
+        id: `vitals-${patient.id}`,
+        icon: <Heart size={16} color="#4F46E5" />,
+        title: isAr ? 'المؤشرات الحيوية المسجلة عند الوصول' : 'Recorded Baseline Vitals',
+        bg: '#EEF2FF',
+        borderColor: '#C7D2FE',
+        titleColor: '#3730A3',
+        content: (
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span>{isAr ? 'الضغط:' : 'BP:'} <strong>{patient.vitals.bp}</strong></span>
+            <span>{isAr ? 'النبض:' : 'Pulse:'} <strong>{patient.vitals.heartRate} bpm</strong></span>
+            <span>{isAr ? 'الحرارة:' : 'Temp:'} <strong>{patient.vitals.temp}°C</strong></span>
+            <span>{isAr ? 'الأكسجين:' : 'SpO2:'} <strong>{patient.vitals.spo2}%</strong></span>
+          </div>
+        )
+      });
+    }
+
+    // 4. Past Procedures Retrieval
+    if (/(عملية|جراحة|تخدير|مرارة|قسطرة|procedure|surgery|anesthesia|operation)/i.test(lower)) {
+      if (patient.pastProcedures && patient.pastProcedures.length > 0) {
+        cards.push({
+          id: `proc-${patient.id}`,
+          icon: <Activity size={16} color="#059669" />,
+          title: isAr ? 'العمليات والتاريخ الجراحي السابق' : 'Past Surgical History in EHR',
+          bg: '#ECFDF5',
+          borderColor: '#A7F3D0',
+          titleColor: '#065F46',
+          content: (
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {patient.pastProcedures.map((p) => (
+                <span key={p.id} style={{ background: '#D1FAE5', color: '#065F46', padding: '0.15rem 0.45rem', borderRadius: 4 }}>
+                  {isAr ? p.procedureNameAr : p.procedureName} ({p.date.slice(0, 4)})
+                </span>
+              ))}
+            </div>
+          )
+        });
+      }
+    }
+
+    return cards;
+  }, [transcript, patient, isAr]);
+
+  // Suggested clarification question for clinician (Item 5)
+  const conversationalSuggestion = React.useMemo(() => {
+    if (!transcript || transcript.trim().length < 15) return null;
+    const lower = transcript.toLowerCase();
+    if (/(حساسية|بنسلين|طفح|allergy)/i.test(lower)) {
+      return {
+        id: `sug-allergy-${patient.id}`,
+        text: isAr
+          ? 'سؤال مقترح: هل حدث التفاعل التحسسي مباشرة بعد الجرعة، وهل تطلب مراجعة الطوارئ؟'
+          : 'Suggested question: Did the reaction occur immediately after the dose, and did it require ER attendance?'
+      };
+    }
+    if (/(أدوية|مسكن|اسبرين|حبوب|medication)/i.test(lower)) {
+      return {
+        id: `sug-meds-${patient.id}`,
+        text: isAr
+          ? 'سؤال مقترح: متى كانت آخر جرعة تم تناولها، وهل توقفت عن مضادات الالتهاب قبل الجراحة؟'
+          : 'Suggested question: When was the last dose taken, and have NSAIDs been held prior to surgery?'
+      };
+    }
+    if (/(دوخة|دوار|وقوف|dizziness)/i.test(lower)) {
+      return {
+        id: `sug-dizzy-${patient.id}`,
+        text: isAr
+          ? 'سؤال مقترح: هل يترافق الدوار مع تشوش في الرؤية أو خفقان في القلب عند تغيير الوضعية؟'
+          : 'Suggested question: Does dizziness coincide with blurred vision or palpitations upon standing?'
+      };
+    }
+    return null;
+  }, [transcript, patient.id, isAr]);
 
   /* ─── Timeline Colors ─── */
   const tlTypeColor = (t: string) => {
@@ -254,7 +410,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
         {/* Photo + Identity */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.1rem' }}>
           <img
-            src={patient.photoUrl || '/saud.jpg'}
+            src={getAssetPath(patient.photoUrl || '/saud.jpg')}
             alt={patient.name}
             style={{
               width: 64,
@@ -615,7 +771,8 @@ export const MainConsultationColumn: React.FC<Props> = ({
               {/* ⚡ Requirement 1: Scenarios Icon Button with Dropdown */}
               <div style={{ position: 'relative' }}>
                 <button
-                  onClick={() => setIsScenariosOpen(!isScenariosOpen)}
+                  ref={scenarioBtnRef}
+                  onClick={toggleScenarios}
                   style={{
                     background: isScenariosOpen ? 'var(--primary)' : 'rgba(79, 70, 229, 0.08)',
                     color: isScenariosOpen ? '#FFFFFF' : 'var(--primary)',
@@ -632,116 +789,106 @@ export const MainConsultationColumn: React.FC<Props> = ({
                     transition: 'all 0.15s',
                     flexShrink: 0
                   }}
-                  title={isAr ? 'السيناريوهات السريرية لتغيير الأسئلة والتشخيص' : 'Clinical Scenarios to change Questions & Diagnoses'}
+                  title={isAr ? 'السيناريوهات السريرية لتغيير المحادثة' : 'Clinical Scenarios'}
                 >
                   <Sparkles size={16} style={{ flexShrink: 0 }} />
                   <span>{isAr ? 'السيناريوهات السريرية' : 'Scenarios'}</span>
                   <span style={{ fontSize: '0.68rem', transition: 'transform 0.2s', transform: isScenariosOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
                 </button>
 
-                {/* Dropdown Menu */}
-                {isScenariosOpen && (
+                {/* Dropdown Menu rendered via React Portal into document.body (Item 1) */}
+                {isScenariosOpen && typeof document !== 'undefined' && createPortal(
                   <div
                     style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      right: isAr ? 0 : 'auto',
-                      left: isAr ? 'auto' : 0,
-                      zIndex: 100,
-                      background: '#FFFFFF',
-                      border: '1.5px solid var(--line)',
-                      borderRadius: 12,
-                      boxShadow: '0 10px 30px rgba(41, 38, 58, 0.18)',
-                      width: 380,
-                      maxWidth: '92vw',
-                      padding: '0.75rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.5rem'
+                      position: 'fixed',
+                      inset: 0,
+                      zIndex: 99998,
+                      background: 'transparent'
                     }}
+                    onClick={() => setIsScenariosOpen(false)}
                   >
-                    <div style={{ padding: '0.35rem 0.5rem', borderBottom: '1px solid var(--line-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--ink)' }}>
-                        {isAr ? '⚡ اختر سيناريو (يتغير السؤال والتشخيص تلقائياً):' : '⚡ Select Scenario (Updates Questions & Diagnoses):'}
-                      </span>
-                      <button
-                        onClick={() => setIsScenariosOpen(false)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--ink-muted)', padding: '0.2rem' }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    {PRESET_CLINICAL_SCENARIOS.map((scen, idx) => (
-                      <div
-                        key={scen.id}
-                        onClick={() => {
-                          handleSelectScenario(scen);
-                          setIsScenariosOpen(false);
-                        }}
-                        style={{
-                          padding: '0.7rem 0.8rem',
-                          borderRadius: 9,
-                          border: '1px solid var(--line-subtle)',
-                          background: '#FAF9FC',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.3rem'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#EEF2FF';
-                          e.currentTarget.style.borderColor = '#C7D2FE';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = '#FAF9FC';
-                          e.currentTarget.style.borderColor = 'var(--line-subtle)';
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <strong style={{ fontSize: '0.84rem', color: 'var(--ink)' }}>
-                            {idx + 1}. {isAr ? scen.titleAr : scen.titleEn}
-                          </strong>
-                          <span style={{
-                            fontSize: '0.65rem',
-                            background: 'rgba(79, 70, 229, 0.1)',
-                            color: 'var(--primary)',
-                            padding: '0.1rem 0.4rem',
-                            borderRadius: 4,
-                            fontWeight: 700
-                          }}>
-                            {isAr ? scen.badgeAr : scen.badgeEn}
-                          </span>
-                        </div>
-
-                        <div style={{ fontSize: '0.73rem', color: 'var(--ink-soft)', lineHeight: 1.4 }}>
-                          {isAr ? scen.descriptionAr : scen.descriptionEn}
-                        </div>
-
-                        {/* Shows distinct question & diagnosis preview */}
-                        <div style={{
-                          fontSize: '0.7rem',
-                          color: '#4F46E5',
-                          marginTop: '0.2rem',
-                          paddingTop: '0.3rem',
-                          borderTop: '1px dashed var(--line-subtle)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.15rem'
-                        }}>
-                          <div>
-                            <span style={{ fontWeight: 700 }}>❓ {isAr ? 'السؤال المقترح:' : 'Question:'}</span>{' '}
-                            <span>{isAr ? scen.analysis.smartQuestion.questionAr : scen.analysis.smartQuestion.question}</span>
-                          </div>
-                          <div>
-                            <span style={{ fontWeight: 700 }}>🩺 {isAr ? 'التشخيص المرجح:' : 'Diagnosis:'}</span>{' '}
-                            <strong style={{ color: '#1E40AF' }}>{isAr ? scen.analysis.clinicalPossibilities[0]?.nameAr : scen.analysis.clinicalPossibilities[0]?.name}</strong>
-                          </div>
-                        </div>
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: 'fixed',
+                        top: scenarioDropdownPos?.top ?? 140,
+                        left: scenarioDropdownPos?.left ?? 20,
+                        zIndex: 99999,
+                        background: '#FFFFFF',
+                        border: '1.5px solid var(--line)',
+                        borderRadius: 12,
+                        boxShadow: '0 12px 36px rgba(41, 38, 58, 0.22)',
+                        width: 380,
+                        maxWidth: '92vw',
+                        maxHeight: 420,
+                        overflowY: 'auto',
+                        padding: '0.75rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem',
+                        direction: isAr ? 'rtl' : 'ltr'
+                      }}
+                    >
+                      <div style={{ padding: '0.35rem 0.5rem', borderBottom: '1px solid var(--line-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--ink)' }}>
+                          {isAr ? '⚡ اختر سيناريو سريري محاكى:' : '⚡ Select Clinical Scenario:'}
+                        </span>
+                        <button
+                          onClick={() => setIsScenariosOpen(false)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--ink-muted)', padding: '0.2rem' }}
+                        >
+                          ✕
+                        </button>
                       </div>
-                    ))}
-                  </div>
+
+                      {PRESET_CLINICAL_SCENARIOS.map((scen, idx) => (
+                        <div
+                          key={scen.id}
+                          onClick={() => handleSelectScenario(scen)}
+                          style={{
+                            padding: '0.7rem 0.8rem',
+                            borderRadius: 9,
+                            border: '1px solid var(--line-subtle)',
+                            background: '#FAF9FC',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.3rem'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#EEF2FF';
+                            e.currentTarget.style.borderColor = '#C7D2FE';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#FAF9FC';
+                            e.currentTarget.style.borderColor = 'var(--line-subtle)';
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <strong style={{ fontSize: '0.84rem', color: 'var(--ink)' }}>
+                              {idx + 1}. {isAr ? scen.titleAr : scen.titleEn}
+                            </strong>
+                            <span style={{
+                              fontSize: '0.65rem',
+                              background: 'rgba(79, 70, 229, 0.1)',
+                              color: 'var(--primary)',
+                              padding: '0.1rem 0.4rem',
+                              borderRadius: 4,
+                              fontWeight: 700
+                            }}>
+                              {isAr ? scen.badgeAr : scen.badgeEn}
+                            </span>
+                          </div>
+
+                          <div style={{ fontSize: '0.73rem', color: 'var(--ink-soft)', lineHeight: 1.4 }}>
+                            {isAr ? scen.descriptionAr : scen.descriptionEn}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>,
+                  document.body
                 )}
               </div>
 
@@ -772,67 +919,38 @@ export const MainConsultationColumn: React.FC<Props> = ({
                 <span>{isAr ? 'إعادة ضبط' : 'Reset'}</span>
               </button>
 
-              {/* Dual Speaker Indicator / Selector */}
+              {/* Intelligent Automatic Speaker Detection Indicator (Item 4: Manual toggle buttons removed) */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  gap: '0.4rem',
                   background: '#F1F5F9',
-                  padding: '3px',
+                  padding: '0.35rem 0.75rem',
                   borderRadius: 8,
                   border: '1px solid var(--line)',
+                  fontSize: '0.74rem',
+                  color: 'var(--ink-soft)',
                   flexShrink: 0
                 }}
-                title={isAr ? 'المتحدث الحالي في المحادثة — تمييز تلقائي ومزدوج' : 'Active speaker (Doctor or Patient)'}
+                title={isAr ? 'تمييز المتحدثين تلقائياً (طبيب / مريض) بدون تدخل يدوي' : 'Automatic Speaker Diarization'}
               >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveSpeaker('doctor');
-                    activeSpeakerRef.current = 'doctor';
-                  }}
-                  style={{
-                    background: activeSpeaker === 'doctor' ? 'var(--primary)' : 'transparent',
-                    color: activeSpeaker === 'doctor' ? '#FFFFFF' : 'var(--ink)',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '0.35rem 0.6rem',
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  <span>👨‍⚕️</span>
-                  <span>{isAr ? 'الطبيب' : 'Doctor'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveSpeaker('patient');
-                    activeSpeakerRef.current = 'patient';
-                  }}
-                  style={{
-                    background: activeSpeaker === 'patient' ? '#059669' : 'transparent',
-                    color: activeSpeaker === 'patient' ? '#FFFFFF' : 'var(--ink)',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '0.35rem 0.6rem',
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  <span>👤</span>
-                  <span>{isAr ? 'المريض' : 'Patient'}</span>
-                </button>
+                <span style={{ fontSize: '0.85rem' }}>{activeSpeaker === 'doctor' ? '👨‍⚕️' : '👤'}</span>
+                <span style={{ fontWeight: 700, color: activeSpeaker === 'doctor' ? 'var(--primary)' : '#059669' }}>
+                  {isAr
+                    ? (activeSpeaker === 'doctor' ? 'المتحدث: الطبيب' : 'المتحدث: المريض')
+                    : (activeSpeaker === 'doctor' ? 'Speaker: Doctor' : 'Speaker: Patient')}
+                </span>
+                <span style={{
+                  fontSize: '0.62rem',
+                  fontWeight: 700,
+                  color: '#065F46',
+                  background: 'rgba(155, 205, 185, 0.35)',
+                  padding: '0.1rem 0.35rem',
+                  borderRadius: 4
+                }}>
+                  {isAr ? 'تلقائي' : 'Auto'}
+                </span>
               </div>
 
               {/* Live Waveform when recording - Real Audio Level with transform: scaleY() */}
@@ -909,6 +1027,81 @@ export const MainConsultationColumn: React.FC<Props> = ({
 
           {/* Body: REAL INTERACTIVE TEXTAREA — Requirement 3: Increased Height & Width */}
           <div style={{ padding: '1.25rem 1.4rem' }}>
+            {/* ─── Item 5: Real-time Contextual EHR Retrieval Cards ─── */}
+            {contextCards
+              .filter((c) => !dismissedContextCards.includes(c.id))
+              .map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    marginBottom: '0.75rem',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 10,
+                    background: c.bg,
+                    border: `1.5px solid ${c.borderColor}`,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '0.65rem',
+                    animation: 'fadeIn 0.25s ease-out'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem' }}>
+                    <div style={{ marginTop: '2px', flexShrink: 0 }}>{c.icon}</div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.2rem' }}>
+                        <strong style={{ fontSize: '0.8rem', color: c.titleColor }}>{c.title}</strong>
+                        <span style={{ fontSize: '0.62rem', padding: '0.08rem 0.35rem', borderRadius: 4, background: 'rgba(255,255,255,0.8)', fontWeight: 700, color: 'var(--ink-soft)' }}>
+                          {isAr ? 'استرجاع فوري من السجل' : 'Real-time EHR Match'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--ink)', lineHeight: 1.45 }}>
+                        {c.content}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setDismissedContextCards((prev) => [...prev, c.id])}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-muted)', padding: '2px' }}
+                    title={isAr ? 'إغلاق' : 'Dismiss'}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+
+            {/* ─── Item 5: Contextual Assistance Follow-up Question Suggestion ─── */}
+            {conversationalSuggestion && !dismissedContextCards.includes(conversationalSuggestion.id) && (
+              <div
+                style={{
+                  marginBottom: '0.75rem',
+                  padding: '0.55rem 0.85rem',
+                  borderRadius: 9,
+                  background: '#F5F3FF',
+                  border: '1.5px solid #DDD6FE',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.65rem',
+                  animation: 'fadeIn 0.25s ease-out'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <span style={{ fontSize: '0.9rem' }}>💡</span>
+                  <span style={{ fontSize: '0.78rem', color: '#5B21B6', fontWeight: 600 }}>
+                    {conversationalSuggestion.text}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setDismissedContextCards((prev) => [...prev, conversationalSuggestion.id])}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7C3AED', padding: '2px' }}
+                  title={isAr ? 'إغلاق' : 'Dismiss'}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <label style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--ink)' }}>
                 {isAr ? 'نص المحادثة والملاحظات الطبية (يمكنك الكتابة والتعديل مباشرة):' : 'Clinical Consultation Notes / Transcript (Fully Editable):'}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Patient } from '../types/clinical';
 import { ChevronRight, ChevronLeft, Search, Users } from 'lucide-react';
+import { getAssetPath } from '../utils/assetHelper';
 
 interface TodayPatientsListProps {
   patients: Patient[];
@@ -259,7 +260,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                     {/* Patient Avatar */}
                     <div style={{ position: 'relative', flexShrink: 0 }}>
                       <img
-                        src={pat.photoUrl || '/saud.jpg'}
+                        src={getAssetPath(pat.photoUrl || '/saud.jpg')}
                         alt={pat.name}
                         style={{
                           width: '32px',
@@ -326,7 +327,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
               ) : (
                 <div style={{ position: 'relative' }}>
                   <img
-                    src={pat.photoUrl || '/saud.jpg'}
+                    src={getAssetPath(pat.photoUrl || '/saud.jpg')}
                     alt={pat.name}
                     style={{
                       width: '32px',

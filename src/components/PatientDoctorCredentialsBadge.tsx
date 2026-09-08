@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Patient, SectorSource } from '../types/clinical';
 import { ShieldCheck, UserCheck, AlertOctagon, Heart, Calendar, Building, Award } from 'lucide-react';
+import { getAssetPath } from '../utils/assetHelper';
 
 interface PatientDoctorCredentialsBadgeProps {
   patient: Patient;
@@ -261,7 +262,7 @@ export const PatientDoctorCredentialsBadge: React.FC<PatientDoctorCredentialsBad
         {/* Doctor Details */}
         <div style={{ padding: '1.15rem 1.25rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <img
-            src="/doctor.jpg"
+            src={getAssetPath('/doctor.jpg')}
             alt="Attending Consultant"
             style={{
               width: '84px',

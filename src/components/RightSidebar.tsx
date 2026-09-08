@@ -5,6 +5,7 @@ import {
   AlertTriangle, Plus, Check, Shield, Clock, Pill, History,
   ChevronDown, ChevronUp
 } from 'lucide-react';
+import { getAssetPath } from '../utils/assetHelper';
 
 interface Props {
   patient: Patient;
@@ -151,7 +152,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
         </div>
 
         <img
-          src={patient.photoUrl || '/saud.jpg'}
+          src={getAssetPath(patient.photoUrl || '/saud.jpg')}
           alt={patient.name}
           style={{
             width: 70,

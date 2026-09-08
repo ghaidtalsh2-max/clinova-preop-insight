@@ -1,4 +1,5 @@
 import type { Patient } from '../types/clinical';
+import { getAssetPath } from '../utils/assetHelper';
 
 export const SYNTHETIC_PATIENTS: Patient[] = [
   // =========================================================================
@@ -7,7 +8,7 @@ export const SYNTHETIC_PATIENTS: Patient[] = [
   // =========================================================================
   {
     id: 'pat-001',
-    photoUrl: '/saud.jpg',
+    photoUrl: getAssetPath('/saud.jpg'),
     nationalId: '10234567891',
     mrn: 'MRN-10293',
     name: 'Ahmed Ali Alotaibi',
@@ -410,7 +411,7 @@ Patient: Also lately, I sometimes get dizzy when I stand up quickly.`,
   // =========================================================================
   {
     id: 'pat-002',
-    photoUrl: '/noura.jpg',
+    photoUrl: getAssetPath('/noura.jpg'),
     nationalId: '10765432109',
     mrn: 'MRN-207341',
     name: 'Sara Mohammed',
@@ -637,7 +638,7 @@ Patient: Also lately, I sometimes get dizzy when I stand up quickly.`,
   // =========================================================================
   {
     id: 'pat-003',
-    photoUrl: '/fahad.jpg',
+    photoUrl: getAssetPath('/fahad.jpg'),
     nationalId: '10987654321',
     mrn: 'MRN-315729',
     name: 'Khalid Omar',
@@ -907,7 +908,7 @@ Patient: Also lately, I sometimes get dizzy when I stand up quickly.`,
   // =========================================================================
   {
     id: 'pat-004',
-    photoUrl: '/sarah.jpg',
+    photoUrl: getAssetPath('/sarah.jpg'),
     nationalId: '10123456789',
     mrn: 'MRN-428615',
     name: 'Fatima Al-Zahrani',
@@ -1121,7 +1122,7 @@ Patient: Also lately, I sometimes get dizzy when I stand up quickly.`,
   // =========================================================================
   {
     id: 'pat-005',
-    photoUrl: '/abdullah.jpg',
+    photoUrl: getAssetPath('/abdullah.jpg'),
     nationalId: '10567891234',
     mrn: 'MRN-536814',
     name: 'Abdullah Hassan',
@@ -1350,7 +1351,7 @@ Patient: Also lately, I sometimes get dizzy when I stand up quickly.`,
   // =========================================================================
   {
     id: 'pat-006',
-    photoUrl: '/sarah.jpg',
+    photoUrl: getAssetPath('/sarah.jpg'),
     nationalId: '10678912345',
     mrn: 'MRN-10298',
     name: 'Nour Saad',
@@ -1450,7 +1451,7 @@ Patient: Also lately, I sometimes get dizzy when I stand up quickly.`,
   // =========================================================================
   {
     id: 'pat-007',
-    photoUrl: '/saud.jpg',
+    photoUrl: getAssetPath('/saud.jpg'),
     nationalId: '10789123456',
     mrn: 'MRN-10299',
     name: 'Rayan Khalid',
@@ -1552,7 +1553,7 @@ Patient: Also lately, I sometimes get dizzy when I stand up quickly.`,
   // =========================================================================
   {
     id: 'pat-008',
-    photoUrl: '/noura.jpg',
+    photoUrl: getAssetPath('/noura.jpg'),
     nationalId: '10891234567',
     mrn: 'MRN-10300',
     name: 'Lama Faisal',

@@ -7,6 +7,7 @@ import {
   BookOpen,
   Key
 } from 'lucide-react';
+import { getAssetPath } from '../utils/assetHelper';
 
 interface DoctorAppHeaderProps {
   theme: 'light' | 'dark';
@@ -64,7 +65,7 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
           }}
         >
           <img
-            src="/assets/clinova_logo_transparent.png"
+            src={getAssetPath('/assets/clinova_logo_transparent.png')}
             alt="Clinova — PreOp Insight"
             style={{
               height: '38px',
@@ -113,7 +114,7 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
         >
           <div style={{ position: 'relative', width: '30px', height: '30px' }}>
             <img
-              src="/doctor.jpg"
+              src={getAssetPath('/doctor.jpg')}
               alt="Dr."
               style={{
                 width: '30px',

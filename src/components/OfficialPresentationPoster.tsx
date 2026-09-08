@@ -12,6 +12,7 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
+import { getAssetPath } from '../utils/assetHelper';
 
 interface OfficialPresentationPosterProps {
   onBack?: () => void;
@@ -110,7 +111,7 @@ export const OfficialPresentationPoster: React.FC<OfficialPresentationPosterProp
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img
-                src="/assets/taif_university_logo.png"
+                src={getAssetPath('/assets/taif_university_logo.png')}
                 alt="Taif University"
                 style={{ height: '56px', width: 'auto', objectFit: 'contain' }}
               />
@@ -120,7 +121,7 @@ export const OfficialPresentationPoster: React.FC<OfficialPresentationPosterProp
 
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img
-                src="/assets/taif_health_cluster_logo.jpg"
+                src={getAssetPath('/assets/taif_health_cluster_logo.jpg')}
                 alt="Taif Health Cluster"
                 style={{ height: '50px', width: 'auto', objectFit: 'contain' }}
               />
@@ -130,7 +131,7 @@ export const OfficialPresentationPoster: React.FC<OfficialPresentationPosterProp
 
             <div style={{ display: 'flex', alignItems: 'center' }}>
               <img
-                src="/assets/clinova_logo.jpg"
+                src={getAssetPath('/assets/clinova_logo.jpg')}
                 alt="Clinova"
                 style={{ height: '52px', width: 'auto', objectFit: 'contain' }}
               />
