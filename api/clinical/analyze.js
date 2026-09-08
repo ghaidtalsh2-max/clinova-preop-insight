@@ -24,7 +24,10 @@ export default async function handler(req, res) {
     process.env.VITE_OPENROUTER_API_KEY ||
     fallbackKey;
 
-  const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  let model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  if (!model || model.includes('claude-3.5-sonnet')) {
+    model = 'openai/gpt-4o-mini';
+  }
 
   try {
     const { transcript, patient, answeredQuestion, liveClarifications, retrievedKnowledge } = req.body || {};

@@ -146,10 +146,13 @@ async function callOpenRouterDirect(
     (import.meta as any).env?.OPENROUTER_API_KEY ||
     fallbackKey;
 
-  const model =
+  let model =
     (import.meta as any).env?.VITE_OPENROUTER_MODEL ||
     (typeof window !== 'undefined' && localStorage.getItem('VITE_OPENROUTER_MODEL')) ||
     'openai/gpt-4o-mini';
+  if (!model || model.includes('claude-3.5-sonnet')) {
+    model = 'openai/gpt-4o-mini';
+  }
 
   if (!apiKey || !apiKey.trim()) return null;
 

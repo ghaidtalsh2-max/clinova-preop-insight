@@ -22,7 +22,7 @@ export async function analyzeConversationWithOpenRouter(
   const model =
     config?.model ||
     (import.meta as any).env?.VITE_OPENROUTER_MODEL ||
-    'anthropic/claude-3.5-sonnet';
+    'openai/gpt-4o-mini';
 
   // Fallback to local deterministic clinical engine if no API key is provided
   if (!apiKey || !apiKey.trim() || transcript.trim().length < 5) {

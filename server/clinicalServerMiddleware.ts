@@ -18,9 +18,12 @@ function getEnvConfig() {
   }
 
   const openRouterKey = env.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY || '';
-  const speechmaticsKey = env.SPEECHMATICS_API_KEY || process.env.SPEECHMATICS_API_KEY || '';
-  const model = env.OPENROUTER_MODEL || process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  let model = env.OPENROUTER_MODEL || process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini';
+  if (!model || model.includes('claude-3.5-sonnet')) {
+    model = 'openai/gpt-4o-mini';
+  }
 
+  const speechmaticsKey = env.SPEECHMATICS_API_KEY || process.env.SPEECHMATICS_API_KEY || '';
   return { openRouterKey, speechmaticsKey, model };
 }
 
