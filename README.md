@@ -53,7 +53,7 @@ npm run dev
 
 ## 🌐 النشر على Vercel (Vercel Deployment)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fghaidtalsh2-max%2Fclinova-preop-insight&project-name=clinova-preop-insight&repository-name=clinova-preop-insight&env=VITE_OPENROUTER_API_KEY,VITE_SPEECHMATICS_API_KEY&envDescription=Enter%20your%20OpenRouter%20and%20Speechmatics%20API%20Keys)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fghaidtalsh2-max%2Fclinova-preop-insight&project-name=clinova-preop-insight&repository-name=clinova-preop-insight&env=VITE_OPENROUTER_API_KEY%2CVITE_SPEECHMATICS_API_KEY%2COPENROUTER_API_KEY%2CSPEECHMATICS_API_KEY%2CVITE_OPENROUTER_MODEL&envDefaults=%7B%22VITE_OPENROUTER_API_KEY%22%3A%22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%22%2C%22VITE_SPEECHMATICS_API_KEY%22%3A%22gUlZyTXWQWGVR8Y9CRHADqAnAiHl3Yoj%22%2C%22OPENROUTER_API_KEY%22%3A%22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%22%2C%22SPEECHMATICS_API_KEY%22%3A%22gUlZyTXWQWGVR8Y9CRHADqAnAiHl3Yoj%22%2C%22VITE_OPENROUTER_MODEL%22%3A%22anthropic%2Fclaude-3.5-sonnet%22%7D&envDescription=Pre-configured+OpenRouter+and+Speechmatics+API+keys+for+Clinova+PreOp+Insight)
 
 المشروع مُهيأ بالكامل للنشر الفوري على **Vercel** عبر ملف `vercel.json` لإعادة التوجيه (SPA Routing).
 
