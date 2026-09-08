@@ -4,5 +4,6 @@ import { clinicalServerMiddleware } from './server/clinicalServerMiddleware.ts'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [react(), clinicalServerMiddleware()],
 })
