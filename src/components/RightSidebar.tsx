@@ -64,7 +64,7 @@ const CountUpVital: React.FC<{ value: string; patientId: string }> = ({ value, p
 export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
   const isAr = lang === 'ar';
   const [newNote, setNewNote] = useState('');
-  const [isPatientDetailsOpen, setIsPatientDetailsOpen] = useState(false);
+  const [isPatientDetailsOpen, setIsPatientDetailsOpen] = useState(true);
   const [notes, setNotes] = useState<string[]>([
     isAr ? 'المريض يلتزم بمواعيد الفحص، ولكن يحتاج مراجعة جرعة الأملوديبين.' : 'Patient is compliant, but Amlodipine dosage needs reassessment.'
   ]);
@@ -88,12 +88,10 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
         borderLeft: isAr ? '1px solid var(--line)' : 'none',
         height: 'calc(100vh - var(--header-height))',
         maxHeight: 'calc(100vh - var(--header-height))',
-        position: 'sticky',
-        top: 'var(--header-height)',
         overflowY: 'auto',
         WebkitOverflowScrolling: 'touch',
         overscrollBehaviorY: 'contain',
-        padding: '0.75rem 0.85rem 8rem 0.85rem',
+        padding: '0 0.85rem 8rem 0.85rem',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.85rem',
@@ -105,16 +103,18 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
     >
       {/* 1. Patient Profile Card - Sticky so photo and icon NEVER disappear */}
       <div
-        className="card-box"
+        className="card-box patient-sticky-card"
         style={{
           padding: '0.85rem 1rem',
           textAlign: 'center',
-          background: '#FFFFFF',
+          background: 'var(--surface, #FFFFFF)',
           borderRadius: 12,
           position: 'sticky',
           top: 0,
-          zIndex: 30,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.06)'
+          zIndex: 50,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+          marginTop: '0.75rem',
+          flexShrink: 0
         }}
       >
         <div
@@ -190,9 +190,9 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
 
       {/* 2, 3, 4: Collapsible Details (Vitals, Medications, History) */}
       {isPatientDetailsOpen && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', flexShrink: 0 }}>
           {/* 2. Vital Signs Card */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{
@@ -363,7 +363,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       )}
 
       {/* 5. Clinical Notes Card (Interactive) */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{
@@ -437,7 +437,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       </div>
 
       {/* 6. Recent Activity */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{
@@ -478,7 +478,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       </div>
 
       {/* 7. Healthcare Standards & Security */}
-      <div style={{ textAlign: 'center', padding: '0.75rem 0', marginTop: '0.5rem' }}>
+      <div style={{ textAlign: 'center', padding: '0.75rem 0', marginTop: '0.5rem', flexShrink: 0 }}>
         <div style={{ fontSize: '0.7rem', color: 'var(--ink-muted)', marginBottom: '0.4rem', fontWeight: 600 }}>
           {isAr ? 'متوافق مع منصة نفيس (NPHIES) ومعايير الأمان الصحي' : 'Compliant with NPHIES & Saudi Health Data Security'}
         </div>
