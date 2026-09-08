@@ -53,6 +53,8 @@ npm run dev
 
 ## 🌐 النشر على Vercel (Vercel Deployment)
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fghaidtalsh2-max%2Fclinova-preop-insight&project-name=clinova-preop-insight&repository-name=clinova-preop-insight&env=VITE_OPENROUTER_API_KEY,VITE_SPEECHMATICS_API_KEY&envDescription=Enter%20your%20OpenRouter%20and%20Speechmatics%20API%20Keys)
+
 المشروع مُهيأ بالكامل للنشر الفوري على **Vercel** عبر ملف `vercel.json` لإعادة التوجيه (SPA Routing).
 
 ### خطوات النشر:
