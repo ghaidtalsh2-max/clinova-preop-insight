@@ -1,0 +1,714 @@
+/* ==========================================================================
+   MEDCONFLICT CLINICAL DESIGN SYSTEM: DOCTOR ACCOUNT DASHBOARD
+   Calm, classic, spacious, fluid, and dignified medical portal (4 Columns)
+   ========================================================================== */
+
+:root {
+  --font-scale: 1;
+
+  /* 1. EXACT CLINOVA "SOFT CLINICAL INTELLIGENCE" PALETTE */
+  --bg: #FAF8F5;               /* Warm White خلفية عامة دافئة مريحة */
+  --bg-secondary: #F1EEF5;     /* Soft Gray-Lilac */
+  --surface: #FFFFFF;          /* خلفية البطاقات الناعمة */
+  --line: #E8E2D8;             /* حدود خفيفة جداً */
+  --line-subtle: #F2EDE4;
+
+  --ink: #29263A;              /* Deep Plum / Navy النص الأساسي */
+  --ink-soft: #675F78;         /* النص الثانوي المتزن */
+  --ink-muted: #958EA3;        /* نصوص الهوامش */
+
+  /* Aliases for universal compatibility */
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-soft);
+  --text-muted: var(--ink-muted);
+  --bg-canvas: #FAF9FC;
+  --border-medium: #DCD2EC;
+  --conflict-red: #DC2626;
+
+  /* Clinical Meaning Colors */
+  --primary: #A88BC4;          /* Soft Lavender */
+  --primary-dark: #352A46;     /* Deep Plum */
+  --secondary: #9BCDB9;        /* Mint Green */
+  --violet: #352A46;           /* Deep Plum for headers */
+  --lavender: #A88BC4;         /* Soft Lavender */
+  --lavender-soft: #F4F0F9;    /* Ultra light Lavender for accents */
+  --lavender-border: #DCD2EC;
+  
+  --coral: #D98B82;            /* Recording / Voice - Muted Coral */
+  --coral-soft: #FDF2F0;
+  --coral-border: #F6D2CE;
+
+  --mint: #82BFA4;             /* Positive / Verified / Procedure - Mint */
+  --mint-soft: #EEF8F3;
+  --mint-border: #C6E6D8;
+
+  --gold: #D5B46A;             /* Attention / Review - Soft Gold */
+  --gold-soft: #FDF9EE;
+  --gold-border: #F3E4BE;
+  --amber: #D5B46A;
+  --amber-soft: #FDF9EE;
+  --amber-border: #F3E4BE;
+
+  --vitals-red: #D97878;       /* Heart Rate / Vitals - Muted Red */
+  --crit: #C96C6C;             /* Critical Conflict - Muted Coral Red */
+  --crit-soft: #FDF1F1;
+  --crit-border: #F5C6C6;
+
+  --timeline-blue: #9C91C7;    /* Timeline Line - Soft Blue-Lavender */
+  --timeline-blue-soft: #F0EEF8;
+
+  /* 2. CLASSIC CALM TYPOGRAPHY (IBM Plex Sans Arabic + Readex Pro) */
+  --font-heading: 'Readex Pro', 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* 3. RADII & SHADOWS (REFINED & SUBTLE) */
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+
+  --shadow-subtle: 0 1px 3px rgba(41, 38, 58, 0.03), 0 2px 6px rgba(41, 38, 58, 0.02);
+  --shadow-card: 0 2px 10px rgba(41, 38, 58, 0.035);
+  --shadow-float: 0 10px 28px rgba(41, 38, 58, 0.07);
+
+  --header-height: 62px;
+  --timeline-rail-width: 56px;
+}
+
+/* ==========================================================================
+   DARK MODE PALETTE (Calm softened contrast: #211E27)
+   ========================================================================== */
+[data-theme="dark"] {
+  --bg: #211E27;               /* خلفية داكنة خالية من السواد الصارخ */
+  --bg-secondary: #272330;
+  --surface: #2B2733;          /* Panels */
+  --line: #383244;
+  --line-subtle: #2E2938;
+
+  --ink: #F4F0EA;              /* Warm text */
+  --ink-soft: #AAA3B2;         /* Muted */
+  --ink-muted: #7E7788;
+
+  --primary: #B59BCF;
+  --primary-dark: #DDD4EC;
+  --secondary: #91C8B0;
+  --violet: #DDD4EC;
+  --lavender: #B59BCF;
+  --lavender-soft: #383247;
+  --lavender-border: #4D4460;
+
+  --coral: #E0948C;
+  --coral-soft: #3E2927;
+  --coral-border: #5A3935;
+
+  --mint: #91C8B0;
+  --mint-soft: #23382F;
+  --mint-border: #315244;
+
+  --gold: #DEC07B;
+  --gold-soft: #3B3320;
+  --gold-border: #594B2C;
+  --amber: #DEC07B;
+  --amber-soft: #3B3320;
+  --amber-border: #594B2C;
+
+  --vitals-red: #E28888;
+  --crit: #D47B7B;
+  --crit-soft: #3D2224;
+  --crit-border: #5C3236;
+
+  --timeline-blue: #A9A0D1;
+  --timeline-blue-soft: #322D42;
+
+  --shadow-subtle: 0 1px 4px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 12px 35px rgba(0, 0, 0, 0.5);
+}
+
+/* Base reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: calc(15px * var(--font-scale));
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  direction: rtl;
+  text-align: right;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.65;
+  font-weight: 400;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--ink);
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: normal;
+  line-height: 1.4;
+}
+
+p, span, div, label, input, textarea, button {
+  font-family: var(--font-body);
+}
+
+svg, .lucide {
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
+  overflow: visible !important;
+}
+
+/* ==========================================================================
+   SPACIOUS 3-COLUMN CLINICAL WORKSPACE
+   ========================================================================== */
+
+.doctor-app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.workspace-4col,
+.workspace-3col {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - var(--header-height));
+  width: 100%;
+  position: relative;
+  align-items: flex-start;
+}
+
+/* Col 1: Far Right - Patients Queue */
+.col-patients-queue {
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  transition: width 280ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 280ms ease;
+  flex-shrink: 0;
+  height: calc(100vh - var(--header-height));
+  position: sticky;
+  top: var(--header-height);
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.col-patients-queue.expanded {
+  width: 250px;
+}
+
+.col-patients-queue.collapsed {
+  width: 58px;
+}
+
+/* Col 2: Slender Rail Timeline (Deep Royal Clinical Purple with smooth expand) */
+.col-timeline-ribbon {
+  width: var(--timeline-rail-width);
+  background: #2D2254;
+  color: #FFFFFF;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  height: 100%;
+  padding: 0.85rem 0;
+  position: relative;
+  z-index: 15;
+  transition: width 280ms cubic-bezier(0.16, 1, 0.3, 1), background-color 200ms ease;
+}
+
+.col-timeline-ribbon.expanded {
+  width: 250px;
+  align-items: stretch;
+  padding: 0.85rem 0.75rem;
+}
+
+/* Col 3: Central Main Consultation (Expands and breathes comfortably) */
+.col-main-clinical {
+  flex: 1;
+  min-width: 440px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 1rem 1.35rem 2.5rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  scrollbar-width: thin;
+}
+
+/* Col 4: Far Left Sidebar (Vitals & Unified Meds - Fully scrollable & interactive) */
+.col-left-sidebar {
+  width: 350px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  padding: 1rem 1rem 5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  flex-shrink: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: scroll !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: var(--lavender) transparent;
+  z-index: 10;
+}
+
+/* ==========================================================================
+   PATIENT STICKY CARD (Always prominent, never clipped or hidden)
+   ========================================================================== */
+.patient-sticky-card {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 20px rgba(38, 33, 53, 0.05);
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.25rem;
+  transition: all 200ms ease;
+}
+
+/* Card boxes */
+.card-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.card-box-header {
+  padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid var(--line-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Triage Dot */
+.triage-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.triage-dot.high {
+  background-color: var(--crit);
+  box-shadow: 0 0 0 2px var(--crit-soft);
+}
+.triage-dot.medium {
+  background-color: var(--amber);
+  box-shadow: 0 0 0 2px var(--amber-soft);
+}
+.triage-dot.low {
+  background-color: var(--mint);
+  box-shadow: 0 0 0 2px var(--mint-soft);
+}
+
+/* Hero Coral Recording Button */
+.btn-record-coral {
+  background: var(--coral);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.95rem;
+  font-weight: 500;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  box-shadow: 0 2px 6px rgba(232, 91, 72, 0.2);
+  transition: all 160ms ease;
+  font-family: var(--font-heading);
+}
+.btn-record-coral:hover {
+  background: #D94F3D;
+}
+.btn-record-coral.recording {
+  animation: pulseRecording 1.4s infinite;
+}
+
+@keyframes pulseRecording {
+  0% { box-shadow: 0 0 0 0 rgba(232, 91, 72, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(232, 91, 72, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 91, 72, 0); }
+}
+
+/* Live Intelligence Question Bubble */
+.live-question-bubble {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-right: 3px solid var(--violet);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+  box-shadow: var(--shadow-subtle);
+  transition: opacity 180ms ease;
+}
+
+.live-question-bubble.asked {
+  opacity: 0.55;
+  background: var(--bg);
+  border-right-color: var(--line);
+}
+
+/* Unified Medication Color Scheme */
+.med-row-historical {
+  background: var(--bg);
+  border-right: 3px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.med-row-mentioned {
+  background: var(--amber-soft);
+  border-right: 3px solid var(--amber);
+  color: var(--ink);
+}
+
+.med-row-unmatched {
+  background: var(--surface);
+  border: 1px dashed var(--amber);
+  border-radius: var(--radius-xs);
+  color: var(--ink);
+}
+
+.med-row-conflict {
+  background: var(--crit-soft);
+  border-right: 3px solid var(--crit);
+  border: 1px solid var(--crit-border);
+  border-right-width: 3px;
+  color: var(--ink);
+}
+
+/* Discriminating Question Box */
+.discriminating-question-box {
+  background: var(--surface);
+  border: 1px solid var(--violet-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* Narrow Gap Alert Banner */
+.differentials-narrow-gap-banner {
+  background: var(--amber-soft);
+  border: 1px solid var(--amber-border);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 0.8rem;
+}
+
+/* Custom delicate scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(140, 130, 160, 0.45);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+@keyframes soundwaveAnim1 {
+  0%, 100% { height: 6px; }
+  50% { height: 22px; }
+}
+
+@keyframes soundwaveAnim2 {
+  0%, 100% { height: 18px; }
+  50% { height: 8px; }
+}
+
+@keyframes soundwaveAnim3 {
+  0%, 100% { height: 10px; }
+  50% { height: 26px; }
+}
+
+@keyframes soundwaveAnim4 {
+  0%, 100% { height: 24px; }
+  50% { height: 12px; }
+}
+
+@keyframes soundwaveAnim5 {
+  0%, 100% { height: 12px; }
+  50% { height: 20px; }
+}
+
+.soundwave-bar {
+  width: 3px;
+  background: var(--coral);
+  border-radius: 3px;
+  display: inline-block;
+  margin: 0 1.5px;
+}
+
+.soundwave-bar:nth-child(1) { animation: soundwaveAnim1 0.7s infinite ease-in-out; }
+.soundwave-bar:nth-child(2) { animation: soundwaveAnim2 0.6s infinite ease-in-out 0.1s; }
+.soundwave-bar:nth-child(3) { animation: soundwaveAnim3 0.8s infinite ease-in-out 0.2s; }
+.soundwave-bar:nth-child(4) { animation: soundwaveAnim4 0.65s infinite ease-in-out 0.15s; }
+.soundwave-bar:nth-child(5) { animation: soundwaveAnim5 0.75s infinite ease-in-out 0.05s; }
+
+.accordion-drawer {
+  transition: max-height 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 280ms ease, padding 280ms ease;
+  overflow: hidden;
+}
+
+.accordion-btn-toggle {
+  transition: transform 250ms ease;
+}
+
+.accordion-btn-toggle.open {
+  transform: rotate(180deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+  .doctor-app-shell {
+    height: auto;
+    overflow: auto;
+  }
+  .workspace-4col {
+    flex-direction: column;
+    height: auto;
+  }
+  .col-patients-queue,
+  .col-patients-queue.expanded,
+  .col-patients-queue.collapsed {
+    width: 100%;
+    height: auto;
+    max-height: 180px;
+    border-left: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .col-timeline-ribbon {
+    width: 100%;
+    height: 54px;
+    flex-direction: row;
+    padding: 0 1rem;
+    overflow-x: auto;
+  }
+  .col-left-sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-top: 1px solid var(--line);
+  }
+  .col-main-clinical {
+    height: auto;
+    min-width: 0;
+  }
+}
+
+/* ==========================================================================
+   CLINOVA SOFT CLINICAL INTELLIGENCE UI COMPONENTS
+   ========================================================================== */
+
+/* 1. Transcript Entity Highlight */
+.transcript-highlight {
+  background: rgba(168, 139, 196, 0.18);
+  color: var(--ink);
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  border-bottom: 1.5px solid var(--lavender);
+  transition: background 150ms ease;
+}
+.transcript-highlight:hover {
+  background: rgba(168, 139, 196, 0.32);
+}
+
+/* 2. Interactive Timeline Events */
+.timeline-event-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms ease;
+  cursor: pointer;
+  position: relative;
+}
+.timeline-event-dot:hover {
+  transform: scale(1.35);
+}
+.timeline-event-dot.diagnosis { background: #899BCB; box-shadow: 0 0 0 3px rgba(137, 155, 203, 0.25); }
+.timeline-event-dot.visit { background: #9B82BA; box-shadow: 0 0 0 3px rgba(155, 130, 186, 0.25); }
+.timeline-event-dot.medication { background: #A88BC4; box-shadow: 0 0 0 3px rgba(168, 139, 196, 0.25); }
+.timeline-event-dot.procedure { background: #82BFA4; box-shadow: 0 0 0 3px rgba(130, 191, 164, 0.25); }
+.timeline-event-dot.major { background: #D5B46A; box-shadow: 0 0 0 3px rgba(213, 180, 106, 0.25); }
+
+/* 3. Smart Question Pill Buttons */
+.pill-btn-yes {
+  background: var(--mint-soft);
+  color: #1A7052;
+  border: 1px solid var(--mint-border);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+[data-theme="dark"] .pill-btn-yes {
+  color: #A3DFC5;
+}
+.pill-btn-yes:hover, .pill-btn-yes.active {
+  background: var(--mint);
+  color: #FFFFFF;
+}
+
+.pill-btn-no {
+  background: var(--bg-secondary);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+.pill-btn-no:hover, .pill-btn-no.active {
+  background: var(--line);
+  color: var(--ink);
+}
+
+.pill-btn-unsure {
+  background: var(--gold-soft);
+  color: #8C6D1F;
+  border: 1px solid var(--gold-border);
+  padding: 0.35rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+[data-theme="dark"] .pill-btn-unsure {
+  color: #F0DA9B;
+}
+.pill-btn-unsure:hover, .pill-btn-unsure.active {
+  background: var(--gold);
+  color: #FFFFFF;
+}
+
+/* 4. Attention Alert Horizontal Row */
+.attention-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+  transition: background 150ms ease;
+}
+.attention-row.missing {
+  border-right: 3px solid var(--gold);
+  background: var(--gold-soft);
+}
+.attention-row.discrepancy {
+  border-right: 3px solid var(--crit);
+  background: var(--crit-soft);
+}
+
+/* 5. Clinical Likelihood Bar */
+.likelihood-bar-container {
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+.likelihood-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.likelihood-bar-fill.high {
+  background: var(--mint);
+}
+.likelihood-bar-fill.moderate {
+  background: var(--gold);
+}
+.likelihood-bar-fill.low {
+  background: var(--ink-muted);
+}
+
+/* 6. Primary Action: Generate Clinical Report Button */
+.btn-generate-report {
+  background: var(--primary-dark);
+  color: #FAF8F5;
+  border: none;
+  padding: 0.65rem 1.4rem;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: var(--font-heading);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(53, 42, 70, 0.16);
+  transition: all 200ms ease;
+}
+.btn-generate-report:hover {
+  background: #4A3A61;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(53, 42, 70, 0.22);
+}
+[data-theme="dark"] .btn-generate-report {
+  background: var(--lavender);
+  color: #211E27;
+}
+[data-theme="dark"] .btn-generate-report:hover {
+  background: #C4ADDB;
+}
+
