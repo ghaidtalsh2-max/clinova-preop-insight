@@ -16,6 +16,50 @@ import {
 } from '../data/clinicalScenarios';
 import { getAssetPath } from '../utils/assetHelper';
 
+/**
+ * Animated Likelihood Bar with CSS width transition
+ * Smoothly interpolates width whenever diagnostic probabilities change
+ */
+const AnimatedLikelihoodBar: React.FC<{ percentage: number; likelihood: string }> = ({ percentage, likelihood }) => {
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setWidth(percentage);
+    }, 40);
+    return () => clearTimeout(timer);
+  }, [percentage]);
+
+  const level =
+    likelihood === 'Higher likelihood' ? 'high' : likelihood === 'Moderate likelihood' ? 'moderate' : 'low';
+
+  return (
+    <div
+      className="likelihood-bar-container"
+      style={{
+        width: '100%',
+        height: 7,
+        background: 'rgba(0, 0, 0, 0.06)',
+        borderRadius: 999,
+        overflow: 'hidden',
+        marginTop: '0.45rem',
+        marginBottom: '0.4rem',
+        position: 'relative'
+      }}
+    >
+      <div
+        className={`likelihood-bar-fill ${level}`}
+        style={{
+          width: `${width}%`,
+          height: '100%',
+          borderRadius: 999,
+          transition: 'width 400ms cubic-bezier(0.16, 1, 0.3, 1)'
+        }}
+      />
+    </div>
+  );
+};
+
 interface Props {
   patient: Patient;
   transcript: string;
@@ -49,13 +93,17 @@ export const MainConsultationColumn: React.FC<Props> = ({
   const [analysisStatus, setAnalysisStatus] = useState<'idle' | 'processing' | 'extracted'>('idle');
   const [aiData, setAiData] = useState<ClinicalAnalysisResponse | null>(null);
   const [smartAnswer, setSmartAnswer] = useState<string | null>(null);
-  const [answeredQuestionsCount, setAnsweredQuestionsCount] = useState(0);
   const [isScenariosOpen, setIsScenariosOpen] = useState(false);
   const scenarioBtnRef = useRef<HTMLButtonElement>(null);
   const [scenarioDropdownPos, setScenarioDropdownPos] = useState<{ top: number; left?: number } | null>(null);
   const [dismissedContextCards, setDismissedContextCards] = useState<string[]>([]);
   const [activeSpeaker, setActiveSpeaker] = useState<'doctor' | 'patient'>('doctor');
   const activeSpeakerRef = useRef<'doctor' | 'patient'>('doctor');
+  const [liveClarifications, setLiveClarifications] = useState<
+    { question: string; answer: 'yes' | 'no' | 'unsure' }[]
+  >([]);
+  const [hasRunAnalysis, setHasRunAnalysis] = useState<boolean>(false);
+  const [answeredDiscriminatingMap, setAnsweredDiscriminatingMap] = useState<Record<string, string>>({});
 
   const toggleScenarios = () => {
     if (!isScenariosOpen && scenarioBtnRef.current) {
@@ -78,9 +126,11 @@ export const MainConsultationColumn: React.FC<Props> = ({
 
   /* Reset answered count and dismissed context cards when switching patients */
   useEffect(() => {
-    setAnsweredQuestionsCount(0);
     setSmartAnswer(null);
     setDismissedContextCards([]);
+    setLiveClarifications([]);
+    setHasRunAnalysis(false);
+    setAnsweredDiscriminatingMap({});
   }, [patient.id]);
 
   /* ─── Timer ─── */
@@ -168,8 +218,11 @@ export const MainConsultationColumn: React.FC<Props> = ({
       setInterimText('');
       speechClient?.stopRecording();
       setAnalysisStatus('processing');
-      const r = await requestClinicalAnalysis(patient, transcript);
-      if (r) setAiData(r);
+      const r = await requestClinicalAnalysis(patient, transcript, undefined, liveClarifications);
+      if (r) {
+        setAiData(r);
+        setHasRunAnalysis(true);
+      }
       setAnalysisStatus('extracted');
     }
   };
@@ -179,15 +232,18 @@ export const MainConsultationColumn: React.FC<Props> = ({
     const txt = isAr ? s.transcriptAr : s.transcriptEn;
     onChangeTranscript(txt);
     // aiData is strictly NOT set here — it updates only when clinician clicks "تشغيل التحليل السريري بالذكاء الاصطناعي"
+    setHasRunAnalysis(false);
+    setAiData(null);
     setIsScenariosOpen(false);
   };
 
-  /* ─── Run Clinical Analysis manually ─── */
+  /* ─── Run Clinical Analysis manually (Item 3: Only here differentials appear) ─── */
   const handleManualAnalysis = async () => {
     if (!transcript.trim()) return;
     setAnalysisStatus('processing');
+    setHasRunAnalysis(true);
     try {
-      const r = await requestClinicalAnalysis(patient, transcript);
+      const r = await requestClinicalAnalysis(patient, transcript, undefined, liveClarifications);
       if (r) {
         setAiData(r);
         if (r.patientMemoryMatches && onUpdatePatientMemoryMatches) {
@@ -199,15 +255,53 @@ export const MainConsultationColumn: React.FC<Props> = ({
     }
   };
 
-  /* ─── Smart Question Answer ─── */
+  /* ─── Smart Question Answer (Item 2: Cumulative live clarifications) ─── */
   const handleSmartAnswer = async (ans: string) => {
     setSmartAnswer(ans);
-    setAnsweredQuestionsCount((prev) => prev + 1);
-    setAnalysisStatus('processing');
-    const q = aiData?.smartQuestion?.question || '';
-    const r = await requestClinicalAnalysis(patient, transcript, { question: q, answer: ans });
-    if (r) setAiData(r);
-    setAnalysisStatus('extracted');
+
+    const ansType: 'yes' | 'no' | 'unsure' =
+      ans === 'نعم' || ans === 'Yes' ? 'yes' : ans === 'لا' || ans === 'No' ? 'no' : 'unsure';
+
+    const updatedClarifications = [...liveClarifications, { question: smartQ, answer: ansType }];
+    setLiveClarifications(updatedClarifications);
+
+    if (hasRunAnalysis) {
+      setAnalysisStatus('processing');
+      const q = aiData?.smartQuestion?.question || smartQ;
+      const r = await requestClinicalAnalysis(patient, transcript, { question: q, answer: ans }, updatedClarifications);
+      if (r) setAiData(r);
+      setAnalysisStatus('extracted');
+    }
+  };
+
+  /* ─── Discriminating Question Answer (Item 3 & 5: Immediate recalculation & Animated Likelihood Bar) ─── */
+  const handleAnswerDiscriminatingQuestion = async (
+    possibilityId: string,
+    _questionText: string,
+    ans: string
+  ) => {
+    setAnsweredDiscriminatingMap((prev) => ({ ...prev, [possibilityId]: ans }));
+    const isYes = ans === 'نعم' || ans === 'Yes';
+    const isNo = ans === 'لا' || ans === 'No';
+
+    // Recalculate probabilities immediately so AnimatedLikelihoodBar slides
+    setAiData((prev) => {
+      if (!prev) return prev;
+      const updated = prev.clinicalPossibilities.map((item) => {
+        const curProb = item.probability ?? (item.likelihood === 'Higher likelihood' ? 82 : item.likelihood === 'Moderate likelihood' ? 68 : 45);
+        if (item.id === possibilityId) {
+          const newProb = isYes ? Math.min(96, curProb + 14) : isNo ? Math.max(25, curProb - 18) : curProb;
+          const newLk = newProb >= 75 ? 'Higher likelihood' : newProb >= 50 ? 'Moderate likelihood' : 'Lower likelihood';
+          return { ...item, probability: newProb, likelihood: newLk as any };
+        } else {
+          const newProb = isYes ? Math.max(20, curProb - 8) : isNo ? Math.min(88, curProb + 12) : curProb;
+          const newLk = newProb >= 75 ? 'Higher likelihood' : newProb >= 50 ? 'Moderate likelihood' : 'Lower likelihood';
+          return { ...item, probability: newProb, likelihood: newLk as any };
+        }
+      });
+      updated.sort((a, b) => (b.probability || 0) - (a.probability || 0));
+      return { ...prev, clinicalPossibilities: updated };
+    });
   };
 
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
@@ -1033,6 +1127,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
               .map((c) => (
                 <div
                   key={c.id}
+                  className="live-banner-entrance"
                   style={{
                     marginBottom: '0.75rem',
                     padding: '0.65rem 0.85rem',
@@ -1043,7 +1138,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                     alignItems: 'flex-start',
                     justifyContent: 'space-between',
                     gap: '0.65rem',
-                    animation: 'fadeIn 0.25s ease-out'
+                    animation: 'slideInFromLeftRtl 260ms cubic-bezier(0.16, 1, 0.3, 1) both'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem' }}>
@@ -1073,6 +1168,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             {/* ─── Item 5: Contextual Assistance Follow-up Question Suggestion ─── */}
             {conversationalSuggestion && !dismissedContextCards.includes(conversationalSuggestion.id) && (
               <div
+                className="live-banner-entrance"
                 style={{
                   marginBottom: '0.75rem',
                   padding: '0.55rem 0.85rem',
@@ -1083,7 +1179,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '0.65rem',
-                  animation: 'fadeIn 0.25s ease-out'
+                  animation: 'slideInFromLeftRtl 260ms cubic-bezier(0.16, 1, 0.3, 1) both'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -1380,7 +1476,16 @@ export const MainConsultationColumn: React.FC<Props> = ({
           <>
 
         {/* ═══ CARD 2: SMART CLINICAL QUESTIONS ═══ */}
-        <div className="card-box" style={{ background: '#FFFFFF', padding: '1.15rem 1.4rem', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <div
+          className="card-box live-banner-entrance"
+          style={{
+            background: '#FFFFFF',
+            padding: '1.15rem 1.4rem',
+            borderRadius: 14,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            animation: 'slideInFromLeftRtl 260ms cubic-bezier(0.16, 1, 0.3, 1) both'
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
               <div
@@ -1452,7 +1557,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             ))}
             {smartAnswer && (
               <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 600, marginInlineStart: '0.5rem' }}>
-                ✓ {isAr ? 'تم تسجيل الإجابة وتحديث التحليل' : 'Answer recorded & analysis updated'}
+                ✓ {isAr ? 'تم حفظ الإجابة وتضمينها بالسياق السريري المباشر' : 'Answer recorded & included in clinical context'}
               </span>
             )}
           </div>
@@ -1579,7 +1684,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             </span>
           </div>
 
-          {answeredQuestionsCount === 0 ? (
+          {!hasRunAnalysis ? (
             <div
               style={{
                 padding: '1.75rem 1.25rem',
@@ -1596,13 +1701,13 @@ export const MainConsultationColumn: React.FC<Props> = ({
               <div style={{ fontSize: '1.6rem' }}>⏳</div>
               <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--ink)' }}>
                 {isAr
-                  ? 'في انتظار إجابة الطبيب على السؤال الاستيضاحي'
-                  : 'Awaiting Clinician Response to Smart Question'}
+                  ? 'في انتظار تشغيل التحليل السريري بالذكاء الاصطناعي'
+                  : 'Awaiting Clinical AI Analysis'}
               </div>
               <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', maxWidth: 460, lineHeight: 1.6 }}>
                 {isAr
-                  ? 'تظل التشخيصات المرشحة محجوبة حتى تتم الإجابة على السؤال الذكي أعلاه لحسم الاحتمالات ومنع الانحياز السريري المبكر.'
-                  : 'Candidate differential diagnoses remain hidden until the clarification question is answered to prevent premature diagnostic closure.'}
+                  ? 'تظهر قائمة التشخيصات المرشحة ونسب الاحتمالية بعد الضغط على زر "تشغيل التحليل السريري بالذكاء الاصطناعي" أعلاه، مستندةً لقاعدة المعرفة والأسئلة الاستيضاحية أثناء المحادثة.'
+                  : 'Differential diagnoses and likelihood percentages appear only after clicking "Run Clinical AI Analysis" above, grounded in the knowledge base and live clarifications.'}
               </div>
             </div>
           ) : (
@@ -1649,13 +1754,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                   'Lower likelihood': { bg: '#F3F4F6', text: '#6B7280', label: isAr ? 'احتمال أقل' : 'Lower likelihood' }
                 };
                 const lk = lkColors[p.likelihood] || lkColors['Lower likelihood'];
-
-                const t1 = poss[0];
-                const t2 = poss[1];
-                const p1P = t1?.probability ?? (t1?.likelihood === 'Higher likelihood' ? 82 : 70);
-                const p2P = t2?.probability ?? (t2?.likelihood === 'Higher likelihood' ? 76 : (t2?.likelihood === 'Moderate likelihood' ? 68 : 45));
-                const isNarrow = Math.abs(p1P - p2P) <= 15;
-                const isHighlightedDiscriminating = i === 0 && isNarrow;
+                const prob = p.probability ?? (p.likelihood === 'Higher likelihood' ? 82 : (p.likelihood === 'Moderate likelihood' ? 68 : 45));
 
                 return (
                   <div
@@ -1665,7 +1764,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                       borderTop: i ? '1px solid var(--line-subtle)' : 'none'
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.35rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginBottom: '0.2rem' }}>
                       <span
                         style={{
                           width: 26,
@@ -1697,10 +1796,16 @@ export const MainConsultationColumn: React.FC<Props> = ({
                           fontWeight: 700
                         }}
                       >
-                        {lk.label} {p.probability ? `(${p.probability}%)` : ''}
+                        {lk.label} ({prob}%)
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)', paddingInlineStart: '2.3rem' }}>
+
+                    {/* Animated Likelihood Bar (Item 5) */}
+                    <div style={{ paddingInlineStart: '2.3rem', maxWidth: 440 }}>
+                      <AnimatedLikelihoodBar percentage={prob} likelihood={p.likelihood} />
+                    </div>
+
+                    <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)', paddingInlineStart: '2.3rem', marginTop: '0.2rem' }}>
                       {p.evidenceFromConversation?.slice(0, 2).map((e, j) => (
                         <span key={j} style={{ marginInlineEnd: '0.75rem', display: 'inline-block' }}>
                           • {e}
@@ -1708,26 +1813,52 @@ export const MainConsultationColumn: React.FC<Props> = ({
                       ))}
                     </div>
 
-                    {/* Discriminating question for top diagnosis if gap is narrow */}
-                    {isHighlightedDiscriminating && p.discriminatingQuestions && p.discriminatingQuestions.length > 0 && (
+                    {/* Discriminating question for each diagnosis with interactive answer buttons (Item 3 & 5) */}
+                    {p.discriminatingQuestions && p.discriminatingQuestions.length > 0 && (
                       <div
                         style={{
-                          marginTop: '0.6rem',
+                          marginTop: '0.65rem',
                           marginInlineStart: '2.3rem',
                           background: 'var(--gold-soft)',
                           border: '1px solid var(--gold-border)',
                           borderRadius: 8,
-                          padding: '0.55rem 0.85rem',
-                          fontSize: '0.78rem',
-                          color: 'var(--gold)',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.45rem'
+                          padding: '0.65rem 0.85rem',
+                          fontSize: '0.8rem'
                         }}
                       >
-                        <span>🎯 {isAr ? 'السؤال التمييزي الحاسم:' : 'Discriminating Question:'}</span>
-                        <span>{isAr ? (p.discriminatingQuestions[0].questionAr || p.discriminatingQuestions[0].question) : p.discriminatingQuestions[0].question}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.45rem', color: 'var(--gold)', fontWeight: 700 }}>
+                          <span>🎯 {isAr ? 'سؤال ترشيح التشخيص:' : 'Discriminating Question:'}</span>
+                          <span>{isAr ? (p.discriminatingQuestions[0].questionAr || p.discriminatingQuestions[0].question) : p.discriminatingQuestions[0].question}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {[isAr ? 'نعم' : 'Yes', isAr ? 'لا' : 'No', isAr ? 'غير متأكد' : 'Not sure'].map((opt) => {
+                            const isSelected = answeredDiscriminatingMap[p.id] === opt;
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => handleAnswerDiscriminatingQuestion(p.id, p.discriminatingQuestions[0].question, opt)}
+                                style={{
+                                  padding: '0.25rem 0.85rem',
+                                  borderRadius: 6,
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  border: isSelected ? '1.5px solid #D97706' : '1px solid var(--gold-border)',
+                                  background: isSelected ? '#FEF3C7' : '#FFFFFF',
+                                  color: isSelected ? '#92400E' : 'var(--ink)',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                          {answeredDiscriminatingMap[p.id] && (
+                            <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
+                              ✓ {isAr ? 'تمت إعادة حساب النسب وتحديث الشريط' : 'Probability updated'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -109,7 +109,7 @@ export function clinicalServerMiddleware() {
 
           req.on('end', async () => {
             try {
-              const { transcript, patient, selectedOptionId } = JSON.parse(body || '{}');
+              const { transcript, patient, selectedOptionId, answeredQuestion, liveClarifications, retrievedKnowledge } = JSON.parse(body || '{}');
 
               if (!transcript || transcript.trim().length < 5) {
                 res.setHeader('Content-Type', 'application/json');
@@ -120,7 +120,7 @@ export function clinicalServerMiddleware() {
               const systemPrompt = `You are Clinova AI, a specialized Pre-Operative Clinical Decision Support System and clinical dialogue understanding engine.
 Analyze the doctor-patient conversation in real time alongside the patient's Electronic Health Record (EHR).
 
-MANDATORY CLINICAL KNOWLEDGE REFERENCES TO INCORPORATE:
+MANDATORY CLINICAL KNOWLEDGE REFERENCES TO INCORPORATE (RAG GROUNDING):
 1. MOH-SA-PROTOCOLS: Saudi Ministry of Health National Clinical Protocols (Pre-operative assessment, medication reconciliation, surgical antimicrobial prophylaxis).
 2. PHA-WEQAYA-2024: Saudi Public Health Authority (Weqaya) Chronic Disease & Metabolic Risk Guidelines.
 3. US-FDA-DRUGS: U.S. FDA Drug Safety, Black Box Warnings & Anticoagulant cessation windows.
@@ -137,7 +137,7 @@ Strict Extraction & Analysis Directives:
    - "Conflicting Information" (معلومات متعارضة)
    - "Potential Clinical Finding" (مؤشر سريري محتمل)
 4. SMART QUESTIONS: generate EXACTLY ONE targeted clarifying question at a time with options ["Yes", "No", "Not sure"] / ["نعم", "لا", "غير متأكد"].
-5. CLINICAL POSSIBILITIES: suggest 2 to 3 differential possibilities with qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood"), supporting evidence from Conversation and from Patient Record, and 1 to 2 discriminating questions.
+5. CLINICAL POSSIBILITIES (RAG GROUNDED): calculate percentage probabilities (10-95%) and qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood") strictly grounded in the retrieved clinical references and the clinician's live clarification responses. For each possibility, provide 1 to 2 discriminating questions to help differentiate competing diagnoses.
 6. CLINICAL REFERENCES: cite 2 to 3 applicable references from the mandatory list above with tag, Arabic title, English title, rationale in Arabic and English, and official URL.
 7. Return STRICTLY valid JSON without markdown fences.
 
@@ -242,7 +242,7 @@ JSON Schema:
                     { role: 'system', content: systemPrompt },
                     {
                       role: 'user',
-                      content: `CURRENT PATIENT RECORD:\n${JSON.stringify(patient, null, 2)}\n\nLIVE CONVERSATION TRANSCRIPT:\n"""\n${transcript}\n"""\n\nSELECTED DISCRIMINATING OPTION: ${selectedOptionId || 'none'}`
+                      content: `CURRENT PATIENT RECORD:\n${JSON.stringify(patient, null, 2)}\n\nLIVE CONVERSATION TRANSCRIPT:\n"""\n${transcript}\n"""\n\nLIVE CLARIFICATIONS FROM DIALOGUE:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\nRETRIEVED KNOWLEDGE BASE REFERENCES:\n${JSON.stringify(retrievedKnowledge || [], null, 2)}\n\nSELECTED DISCRIMINATING / SMART QUESTION: ${JSON.stringify(answeredQuestion || selectedOptionId || 'none')}`
                     }
                   ]
                 })
@@ -267,7 +267,7 @@ JSON Schema:
                       { role: 'system', content: systemPrompt },
                       {
                         role: 'user',
-                        content: `CURRENT PATIENT RECORD:\n${JSON.stringify(patient, null, 2)}\n\nLIVE CONVERSATION TRANSCRIPT:\n"""\n${transcript}\n"""\n\nSELECTED DISCRIMINATING OPTION: ${selectedOptionId || 'none'}`
+                        content: `CURRENT PATIENT RECORD:\n${JSON.stringify(patient, null, 2)}\n\nLIVE CONVERSATION TRANSCRIPT:\n"""\n${transcript}\n"""\n\nLIVE CLARIFICATIONS FROM DIALOGUE:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\nRETRIEVED KNOWLEDGE BASE REFERENCES:\n${JSON.stringify(retrievedKnowledge || [], null, 2)}\n\nSELECTED DISCRIMINATING / SMART QUESTION: ${JSON.stringify(answeredQuestion || selectedOptionId || 'none')}`
                       }
                     ]
                   })

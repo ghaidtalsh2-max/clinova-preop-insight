@@ -1,3 +1,5 @@
+import type { Patient } from '../types/clinical';
+
 export interface ClinicalReference {
   id: string;
   category: 'national_saudi' | 'global_clinical' | 'drug_safety' | 'ethical_governance' | 'standards_apis';
@@ -118,3 +120,78 @@ export const CLINOVA_KNOWLEDGE_BASE: ClinicalReference[] = [
     citationTag: 'OPENFDA-REST-API'
   }
 ];
+
+/**
+ * Real-time Clinical Knowledge Base (RAG) Retrieval Function
+ * Retrieves relevant national Saudi protocols, global NICE guidelines, and FDA drug safety evidence
+ * based on the active dialogue and patient clinical context.
+ */
+export function retrieveRelevantKnowledge(
+  transcript: string,
+  patient: Patient
+): ClinicalReference[] {
+  const text = `${transcript || ''} ${patient.nameAr || ''} ${(patient.medications || []).map(m => m.name + ' ' + m.genericName).join(' ')} ${(patient.allergies || []).map(a => a.substance + ' ' + a.substanceAr).join(' ')} ${(patient.chronicConditions || []).map(c => c.name + ' ' + c.nameAr).join(' ')}`.toLowerCase();
+
+  const scored = CLINOVA_KNOWLEDGE_BASE.map((ref) => {
+    let score = 1;
+    // Saudi national baselines receive a baseline priority in Clinova
+    if (ref.category === 'national_saudi') score += 3;
+
+    // Drug safety & allergies & anticoagulants
+    if (
+      ref.id === 'ref-fda-drugs' &&
+      (text.includes('دواء') ||
+        text.includes('علاج') ||
+        text.includes('سيولة') ||
+        text.includes('بنسلين') ||
+        text.includes('حساسية') ||
+        text.includes('aspirin') ||
+        text.includes('penicillin') ||
+        text.includes('allergy') ||
+        text.includes('medication'))
+    ) {
+      score += 6;
+    }
+
+    // Cardiovascular & chronic metabolic diseases
+    if (
+      ref.id === 'ref-pha-risk' &&
+      (text.includes('ضغط') ||
+        text.includes('دوخة') ||
+        text.includes('سكر') ||
+        text.includes('قلب') ||
+        text.includes('hypertension') ||
+        text.includes('dizziness') ||
+        text.includes('diabetes'))
+    ) {
+      score += 6;
+    }
+
+    // Surgical protocols and pre-op pathways
+    if (
+      ref.id === 'ref-moh-protocols' &&
+      (text.includes('عملية') ||
+        text.includes('جراحة') ||
+        text.includes('تخدير') ||
+        text.includes('surgery') ||
+        text.includes('preop') ||
+        text.includes('anesthesia'))
+    ) {
+      score += 6;
+    }
+
+    // NICE discriminating criteria & diagnostic thresholding
+    if (ref.id === 'ref-nice-guidance') {
+      score += 5;
+    }
+
+    // WHO ICD-11 standard diagnostic ontology
+    if (ref.id === 'ref-who-icd') {
+      score += 2;
+    }
+
+    return { ref, score };
+  });
+
+  return scored.sort((a, b) => b.score - a.score).map((s) => s.ref);
+}
