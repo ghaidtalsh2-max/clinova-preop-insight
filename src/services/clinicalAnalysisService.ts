@@ -457,16 +457,86 @@ function fallbackClinicalAnalysis(
   }
 
   // If keyword matches preset scenarios
-  const match =
-    PRESET_CLINICAL_SCENARIOS.find((s) => {
-      const keywords = (s.titleAr + ' ' + s.titleEn).toLowerCase();
-      if (hasDizziness && keywords.includes('دوخة')) return true;
-      if (hasAllergy && (keywords.includes('بنسلين') || keywords.includes('حساسية'))) return true;
-      if (normText.includes('سيولة') && keywords.includes('سيولة')) return true;
-      if (normText.includes('فتق') && keywords.includes('فتق')) return true;
-      if (normText.includes('سكر') && keywords.includes('سكر')) return true;
-      return false;
-    }) || PRESET_CLINICAL_SCENARIOS[0];
+  const match = PRESET_CLINICAL_SCENARIOS.find((s) => {
+    const keywords = (s.titleAr + ' ' + s.titleEn).toLowerCase();
+    if (hasDizziness && keywords.includes('دوخة')) return true;
+    if (hasAllergy && (keywords.includes('بنسلين') || keywords.includes('حساسية'))) return true;
+    if (normText.includes('سيولة') && keywords.includes('سيولة')) return true;
+    if (normText.includes('فتق') && keywords.includes('فتق')) return true;
+    if (normText.includes('سكر') && keywords.includes('سكر')) return true;
+    return false;
+  });
+
+  if (!match) {
+    const safeMedications = patient.medications || [];
+    const safeAllergies = patient.allergies || [];
+    const safeChronic = patient.chronicConditions || [];
+
+    return normalizeAnalysisResponse({
+      extractedInformation: {
+        symptoms: [{ text: 'Clinical Consultation Notes', textAr: 'أعراض وملاحظات سريرية مستجدة' }],
+        duration: 'غير محدد بدقة',
+        trigger: 'قيد الاستقصاء السريري',
+        medications: safeMedications.slice(0, 1).map((m) => ({ name: m.name, status: 'verified' })),
+        allergies: safeAllergies.map((a) => a.substanceAr),
+        relevantHistory: safeChronic.map((c) => c.nameAr)
+      },
+      patientMemoryMatches: safeMedications.slice(0, 1).map((m) => ({
+        category: 'medication',
+        matchedEntity: m.name,
+        matchedEntityAr: m.name,
+        source: m.sector,
+        statement: 'Documented active medication in EHR',
+        statementAr: 'دواء موثق بالسجل الطبي الموحد'
+      })),
+      whatNeedsAttention: [
+        {
+          id: 'att-gen-1',
+          category: 'متابعة سريرية',
+          categoryAr: 'متابعة سريرية',
+          title: 'مراجعة العلامات الحيوية ومطابقة التاريخ الدوائي للمريض',
+          titleAr: 'مراجعة العلامات الحيوية ومطابقة التاريخ الدوائي للمريض',
+          severity: 'medium'
+        }
+      ],
+      smartQuestion: {
+        id: 'sq-gen-1',
+        question: 'Does the patient have any other associated symptoms or recent medication changes?',
+        questionAr: 'هل يعاني المريض من أي أعراض مصاحبة أخرى أو تغييرات دوائية حديثة؟',
+        options: ['نعم', 'لا', 'غير متأكد']
+      },
+      clinicalPossibilities: [
+        {
+          id: 'pos-gen-1',
+          name: 'General Clinical Review / Follow-up',
+          nameAr: 'تقييم سريري شامل ومتابعة الحالة',
+          likelihood: 'Higher likelihood',
+          probability: 78,
+          evidenceFromConversation: ['Reported symptoms during clinical consultation'],
+          evidenceFromConversationAr: ['أعراض مستجدة أثناء المعاينة السريرية'],
+          evidenceFromRecord: safeChronic.map((c) => c.nameAr),
+          evidenceFromRecordAr: safeChronic.map((c) => c.nameAr),
+          discriminatingQuestions: [
+            {
+              question: 'Are the symptoms constant or intermittent?',
+              questionAr: 'هل الأعراض مستمرة طوال اليوم أم متقطعة؟'
+            }
+          ]
+        }
+      ],
+      clinicalSummary: {
+        en: 'Clinical evaluation pending full diagnostic workup.',
+        ar: 'معاينة سريرية أولية — يوصى بمراجعة العلامات الحيوية والتاريخ الدوائي.'
+      },
+      clinicalReferences: (retrievedKnowledge && retrievedKnowledge.length > 0 ? retrievedKnowledge : []).slice(0, 3).map((ref) => ({
+        tag: ref.citationTag,
+        titleAr: ref.titleAr,
+        titleEn: ref.titleEn,
+        rationaleAr: ref.roleInClinovaAr,
+        url: ref.url
+      }))
+    });
+  }
 
   const baseAnalysis = JSON.parse(JSON.stringify(match.analysis));
 

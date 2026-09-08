@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { SpeechmaticsRealtimeClient } from '../services/speechmaticsRealtime';
 import {
-  requestClinicalAnalysis, debouncedClinicalAnalysis,
+  requestClinicalAnalysis,
   type ClinicalAnalysisResponse, type PatientMemoryMatchItem
 } from '../services/clinicalAnalysisService';
 import {
@@ -99,6 +99,8 @@ export const MainConsultationColumn: React.FC<Props> = ({
   const [dismissedContextCards, setDismissedContextCards] = useState<string[]>([]);
   const [activeSpeaker, setActiveSpeaker] = useState<'doctor' | 'patient'>('doctor');
   const activeSpeakerRef = useRef<'doctor' | 'patient'>('doctor');
+  const lastSpeakerRef = useRef<'doctor' | 'patient' | null>(null);
+  const lastChunkTimeRef = useRef<number>(0);
   const [liveClarifications, setLiveClarifications] = useState<
     { question: string; answer: 'yes' | 'no' | 'unsure' }[]
   >([]);
@@ -124,13 +126,16 @@ export const MainConsultationColumn: React.FC<Props> = ({
     transcriptRef.current = transcript;
   }, [transcript]);
 
-  /* Reset answered count and dismissed context cards when switching patients */
+  /* Reset answered count, analysis data, and dismissed context cards when switching patients */
   useEffect(() => {
+    setAiData(null);
     setSmartAnswer(null);
     setDismissedContextCards([]);
     setLiveClarifications([]);
     setHasRunAnalysis(false);
     setAnsweredDiscriminatingMap({});
+    lastChunkTimeRef.current = 0;
+    lastSpeakerRef.current = null;
   }, [patient.id]);
 
   /* ─── Timer ─── */
@@ -144,14 +149,15 @@ export const MainConsultationColumn: React.FC<Props> = ({
     return () => clearInterval(iv);
   }, [isRecording]);
 
-  /* ─── Speechmatics Client with Diarization ─── */
+  /* ─── Speechmatics Client with Utterance-Level Buffering ─── */
   useEffect(() => {
     const client = new SpeechmaticsRealtimeClient(
       {
         onTranscriptChunk: (chunk: string, isFinal: boolean, speaker?: string) => {
-          if (!chunk) return;
+          const cleaned = chunk ? chunk.trim() : '';
+          if (!cleaned) return;
           if (!isFinal) {
-            setInterimText(chunk);
+            setInterimText(cleaned);
             return;
           }
           setInterimText('');
@@ -163,29 +169,34 @@ export const MainConsultationColumn: React.FC<Props> = ({
           } else if (speaker === 'S1') {
             currentRole = 'doctor';
           }
+          activeSpeakerRef.current = currentRole;
+          setActiveSpeaker(currentRole);
 
-          const spkTag = isAr
-            ? (currentRole === 'doctor' ? 'الطبيب: ' : 'المريض: ')
-            : (currentRole === 'doctor' ? 'Doctor: ' : 'Patient: ');
+          // 2. Utterance-level Buffering (Same speaker within 850ms silence appends to same line)
+          const now = Date.now();
+          const SILENCE_PAUSE_MS = 850;
+          const isSameSpeaker = lastSpeakerRef.current === currentRole;
+          const isWithinPause = now - lastChunkTimeRef.current <= SILENCE_PAUSE_MS;
+          const currentTranscript = transcriptRef.current.trim();
 
-          let upd = transcriptRef.current.trim();
-          upd = upd ? `${upd}\n${spkTag}${chunk}` : `${spkTag}${chunk}`;
+          let upd = '';
+          const isPunctuation = /^[.,!?;:،؟]/.test(cleaned);
+
+          if (isSameSpeaker && isWithinPause && currentTranscript.length > 0) {
+            // Append word or phrase to existing line without repeating speaker tag
+            upd = isPunctuation ? `${currentTranscript}${cleaned}` : `${currentTranscript} ${cleaned}`;
+          } else {
+            // Only start a new line with speaker tag on actual speaker change or true acoustic pause
+            const spkTag = isAr
+              ? (currentRole === 'doctor' ? 'الطبيب: ' : 'المريض: ')
+              : (currentRole === 'doctor' ? 'Doctor: ' : 'Patient: ');
+
+            upd = currentTranscript ? `${currentTranscript}\n${spkTag}${cleaned}` : `${spkTag}${cleaned}`;
+          }
+
+          lastSpeakerRef.current = currentRole;
+          lastChunkTimeRef.current = now;
           onChangeTranscript(upd);
-
-          // Alternates speaker turn for next utterance if single mic is used
-          const nextRole = currentRole === 'doctor' ? 'patient' : 'doctor';
-          setActiveSpeaker(nextRole);
-          activeSpeakerRef.current = nextRole;
-
-          // 2. Real-time OpenRouter Clinical Analysis & Reasoning
-          setAnalysisStatus('processing');
-          debouncedClinicalAnalysis(patient, upd, (r) => {
-            setAiData(r);
-            setAnalysisStatus('extracted');
-            if (r.patientMemoryMatches && onUpdatePatientMemoryMatches) {
-              onUpdatePatientMemoryMatches(r.patientMemoryMatches);
-            }
-          });
         },
         onAudioLevel: (l: number) => setAudioLevel(l),
         onStatusChange: (s) => {
@@ -206,6 +217,8 @@ export const MainConsultationColumn: React.FC<Props> = ({
       setIsRecording(true);
       setInterimText('');
       setAnalysisStatus('processing');
+      lastChunkTimeRef.current = 0;
+      lastSpeakerRef.current = null;
       if (speechClient) {
         const ok = await speechClient.startRecording();
         if (!ok) {
@@ -217,13 +230,9 @@ export const MainConsultationColumn: React.FC<Props> = ({
       setIsRecording(false);
       setInterimText('');
       speechClient?.stopRecording();
-      setAnalysisStatus('processing');
-      const r = await requestClinicalAnalysis(patient, transcript, undefined, liveClarifications);
-      if (r) {
-        setAiData(r);
-        setHasRunAnalysis(true);
-      }
-      setAnalysisStatus('extracted');
+      setAnalysisStatus('idle');
+      lastChunkTimeRef.current = 0;
+      lastSpeakerRef.current = null;
     }
   };
 
@@ -234,6 +243,8 @@ export const MainConsultationColumn: React.FC<Props> = ({
     // aiData is strictly NOT set here — it updates only when clinician clicks "تشغيل التحليل السريري بالذكاء الاصطناعي"
     setHasRunAnalysis(false);
     setAiData(null);
+    lastChunkTimeRef.current = 0;
+    lastSpeakerRef.current = null;
     setIsScenariosOpen(false);
   };
 
@@ -257,6 +268,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
 
   /* ─── Smart Question Answer (Item 2: Cumulative live clarifications) ─── */
   const handleSmartAnswer = async (ans: string) => {
+    if (!smartQ) return;
     setSmartAnswer(ans);
 
     const ansType: 'yes' | 'no' | 'unsure' =
@@ -306,14 +318,13 @@ export const MainConsultationColumn: React.FC<Props> = ({
 
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
-  /* ─── Fallback Data ─── */
-  const fallback = PRESET_CLINICAL_SCENARIOS[0].analysis;
-  const ext = aiData?.extractedInformation || fallback.extractedInformation;
+  /* ─── AI Analysis Data (Strictly from real AI analysis, NO hardcoded fallback) ─── */
+  const ext = aiData?.extractedInformation || null;
   const smartQ = isAr
-    ? aiData?.smartQuestion?.questionAr || fallback.smartQuestion.questionAr
-    : aiData?.smartQuestion?.question || fallback.smartQuestion.question;
-  const atts = aiData?.whatNeedsAttention || fallback.whatNeedsAttention;
-  const poss = aiData?.clinicalPossibilities || fallback.clinicalPossibilities;
+    ? aiData?.smartQuestion?.questionAr || null
+    : aiData?.smartQuestion?.question || null;
+  const atts = aiData?.whatNeedsAttention || [];
+  const poss = aiData?.clinicalPossibilities || [];
 
   /* ─── Item 5: Real-time Contextual EHR Retrieval & Clinical Assistance ─── */
   const contextCards = React.useMemo(() => {
@@ -1339,8 +1350,8 @@ export const MainConsultationColumn: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Extracted Entities Tag Bar (Only when transcript exists) */}
-          {!!transcript.trim() && (
+          {/* Extracted Entities Tag Bar (Only when analysis has run and real entities exist) */}
+          {!!transcript.trim() && hasRunAnalysis && !!aiData && !!ext && (
             <div
               style={{
                 background: '#F8FAFC',
@@ -1520,47 +1531,67 @@ export const MainConsultationColumn: React.FC<Props> = ({
             </span>
           </div>
 
-          <div
-            style={{
-              background: '#FAF9FC',
-              borderRadius: 10,
-              padding: '1rem 1.15rem',
-              fontSize: '0.9rem',
-              color: 'var(--ink)',
-              lineHeight: 1.7,
-              border: '1px solid var(--line)'
-            }}
-          >
-            <span style={{ color: '#7C3AED', fontWeight: 800, fontSize: '1.1rem', marginInlineEnd: '0.4rem' }}>?</span>
-            {smartQ}
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.85rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {[isAr ? 'نعم' : 'Yes', isAr ? 'لا' : 'No', isAr ? 'غير متأكد' : 'Not sure'].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => handleSmartAnswer(opt)}
+          {!hasRunAnalysis || !aiData || !smartQ ? (
+            <div
+              style={{
+                padding: '1.4rem 1rem',
+                background: '#FAF9FC',
+                borderRadius: 10,
+                border: '1.5px dashed var(--line)',
+                textAlign: 'center',
+                color: 'var(--ink-soft)',
+                fontSize: '0.84rem'
+              }}
+            >
+              {isAr
+                ? 'بانتظار تشغيل التحليل السريري بالذكاء الاصطناعي لتوليد أسئلة الاستيضاح الذكية.'
+                : 'Awaiting Clinical AI Analysis to generate clarification questions.'}
+            </div>
+          ) : (
+            <>
+              <div
                 style={{
-                  padding: '0.45rem 1.35rem',
-                  borderRadius: 8,
-                  fontSize: '0.84rem',
-                  fontWeight: 700,
-                  border: `1.5px solid ${smartAnswer === opt ? '#4F46E5' : 'var(--line)'}`,
-                  background: smartAnswer === opt ? '#EEF2FF' : '#FFFFFF',
-                  color: smartAnswer === opt ? '#4F46E5' : 'var(--ink)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s'
+                  background: '#FAF9FC',
+                  borderRadius: 10,
+                  padding: '1rem 1.15rem',
+                  fontSize: '0.9rem',
+                  color: 'var(--ink)',
+                  lineHeight: 1.7,
+                  border: '1px solid var(--line)'
                 }}
               >
-                {opt}
-              </button>
-            ))}
-            {smartAnswer && (
-              <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 600, marginInlineStart: '0.5rem' }}>
-                ✓ {isAr ? 'تم حفظ الإجابة وتضمينها بالسياق السريري المباشر' : 'Answer recorded & included in clinical context'}
-              </span>
-            )}
-          </div>
+                <span style={{ color: '#7C3AED', fontWeight: 800, fontSize: '1.1rem', marginInlineEnd: '0.4rem' }}>?</span>
+                {smartQ}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.85rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {[isAr ? 'نعم' : 'Yes', isAr ? 'لا' : 'No', isAr ? 'غير متأكد' : 'Not sure'].map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => handleSmartAnswer(opt)}
+                    style={{
+                      padding: '0.45rem 1.35rem',
+                      borderRadius: 8,
+                      fontSize: '0.84rem',
+                      fontWeight: 700,
+                      border: `1.5px solid ${smartAnswer === opt ? '#4F46E5' : 'var(--line)'}`,
+                      background: smartAnswer === opt ? '#EEF2FF' : '#FFFFFF',
+                      color: smartAnswer === opt ? '#4F46E5' : 'var(--ink)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {opt}
+                  </button>
+                ))}
+                {smartAnswer && (
+                  <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 600, marginInlineStart: '0.5rem' }}>
+                    ✓ {isAr ? 'تم حفظ الإجابة وتضمينها بالسياق السريري المباشر' : 'Answer recorded & included in clinical context'}
+                  </span>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* ═══ CARD 3: WHAT NEEDS ATTENTION ═══ */}
@@ -1599,53 +1630,71 @@ export const MainConsultationColumn: React.FC<Props> = ({
             </span>
           </div>
 
-          {atts.slice(0, 3).map((a, i) => {
-            const sevColors: Record<string, string> = { high: '#DC2626', medium: '#D97706', low: '#6B7280' };
-            const sevBgs: Record<string, string> = { high: '#FEE2E2', medium: '#FEF3C7', low: '#F3F4F6' };
-            const color = sevColors[a.severity] || '#D97706';
-            const bg = sevBgs[a.severity] || '#FEF3C7';
+          {!hasRunAnalysis || !aiData || atts.length === 0 ? (
+            <div
+              style={{
+                padding: '1.4rem 1rem',
+                background: '#FAF9FC',
+                borderRadius: 10,
+                border: '1.5px dashed var(--line)',
+                textAlign: 'center',
+                color: 'var(--ink-soft)',
+                fontSize: '0.84rem'
+              }}
+            >
+              {isAr
+                ? 'لا توجد تنبيهات سريرية حالياً — تظهر التنبيهات بعد تشغيل التحليل بالذكاء الاصطناعي.'
+                : 'No clinical alerts at this time — alerts will appear after running AI analysis.'}
+            </div>
+          ) : (
+            atts.slice(0, 3).map((a, i) => {
+              const sevColors: Record<string, string> = { high: '#DC2626', medium: '#D97706', low: '#6B7280' };
+              const sevBgs: Record<string, string> = { high: '#FEE2E2', medium: '#FEF3C7', low: '#F3F4F6' };
+              const color = sevColors[a.severity] || '#D97706';
+              const bg = sevBgs[a.severity] || '#FEF3C7';
 
-            return (
-              <div
-                key={a.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.85rem',
-                  padding: '0.75rem 0',
-                  borderTop: i ? '1px solid var(--line-subtle)' : 'none'
-                }}
-              >
+              return (
                 <div
+                  key={a.id}
                   style={{
-                    width: 26,
-                    height: 26,
-                    minWidth: 26,
-                    flexShrink: 0,
-                    borderRadius: 7,
-                    background: bg,
-                    color: color,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.8rem',
-                    fontWeight: 800
+                    gap: '0.85rem',
+                    padding: '0.75rem 0',
+                    borderTop: i ? '1px solid var(--line-subtle)' : 'none'
                   }}
                 >
-                  {i + 1}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.76rem', fontWeight: 700, color: color }}>
-                    {isAr ? a.categoryAr : a.category}
+                  <div
+                    style={{
+                      width: 26,
+                      height: 26,
+                      minWidth: 26,
+                      flexShrink: 0,
+                      borderRadius: 7,
+                      background: bg,
+                      color: color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '0.8rem',
+                      fontWeight: 800
+                    }}
+                  >
+                    {i + 1}
                   </div>
-                  <div style={{ fontSize: '0.84rem', color: 'var(--ink)', fontWeight: 600, marginTop: '0.15rem' }}>
-                    {isAr ? a.titleAr : a.title}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.76rem', fontWeight: 700, color: color }}>
+                      {isAr ? a.categoryAr : a.category}
+                    </div>
+                    <div style={{ fontSize: '0.84rem', color: 'var(--ink)', fontWeight: 600, marginTop: '0.15rem' }}>
+                      {isAr ? a.titleAr : a.title}
+                    </div>
                   </div>
+                  <ChevronRight size={18} color="var(--ink-muted)" style={{ flexShrink: 0 }} />
                 </div>
-                <ChevronRight size={18} color="var(--ink-muted)" style={{ flexShrink: 0 }} />
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {/* ═══ CARD 4: CLINICAL POSSIBILITIES ═══ */}
@@ -1684,7 +1733,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             </span>
           </div>
 
-          {!hasRunAnalysis ? (
+          {!hasRunAnalysis || !aiData || poss.length === 0 ? (
             <div
               style={{
                 padding: '1.75rem 1.25rem',
