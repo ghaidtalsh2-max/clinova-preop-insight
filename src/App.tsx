@@ -92,6 +92,18 @@ export const App: React.FC = () => {
 
   const hasCriticalConflicts = currentPatient.medications.some((m) => m.mentionStatus === 'conflict' || m.conflictFlag);
 
+  // Pre-Op Readiness Gauge calculation (Feature 3)
+  const preOpReadiness: 'ready' | 'needs_clearance' | 'high_risk' = React.useMemo(() => {
+    if (hasCriticalConflicts) return 'high_risk';
+    const hasHighSeverityAlert = aiData?.whatNeedsAttention?.some((a) => a.severity === 'high');
+    if (hasHighSeverityAlert) return 'high_risk';
+    const hasUnresolvedQuestions = (currentPatient as any).missingGaps?.some((g: any) => !g.resolved);
+    const topDiagnosis = aiData?.clinicalPossibilities?.[0];
+    const topProb = topDiagnosis?.probability ?? 80;
+    if (hasUnresolvedQuestions || topProb < 70) return 'needs_clearance';
+    return 'ready';
+  }, [hasCriticalConflicts, aiData, currentPatient]);
+
   return (
     <div className="doctor-app-shell">
       <DoctorAppHeader
@@ -105,6 +117,7 @@ export const App: React.FC = () => {
         onOpenKnowledgeBase={() => setIsKnowledgeBaseModalOpen(true)}
         onOpenApiKeys={() => setIsApiKeysModalOpen(true)}
         hasCriticalConflicts={hasCriticalConflicts}
+        preOpReadiness={preOpReadiness}
       />
 
       {/* 3-column workspace: Patients | Main | Right Sidebar */}
@@ -132,6 +145,7 @@ export const App: React.FC = () => {
 
         <RightSidebar
           patient={currentPatient}
+          transcript={transcript}
           lang={lang}
         />
       </div>

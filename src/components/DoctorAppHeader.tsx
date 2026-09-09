@@ -20,6 +20,7 @@ interface DoctorAppHeaderProps {
   onOpenKnowledgeBase?: () => void;
   onOpenApiKeys?: () => void;
   hasCriticalConflicts?: boolean;
+  preOpReadiness?: 'ready' | 'needs_clearance' | 'high_risk';
 }
 
 export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
@@ -32,7 +33,8 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
   onOpenPreOpModal,
   onOpenKnowledgeBase,
   onOpenApiKeys: _onOpenApiKeys,
-  hasCriticalConflicts: _hasCriticalConflicts
+  hasCriticalConflicts: _hasCriticalConflicts,
+  preOpReadiness = 'needs_clearance'
 }) => {
   const isAr = lang === 'ar';
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -174,6 +176,70 @@ export const DoctorAppHeader: React.FC<DoctorAppHeaderProps> = ({
             <span>{isAr ? 'قاعدة المعرفة' : 'Knowledge Base'}</span>
           </button>
         )}
+
+        {/* Feature 3: Pre-Op Readiness Gauge (مؤشر جاهزية ما قبل العملية) */}
+        {(() => {
+          const cfg = {
+            ready: {
+              color: 'var(--mint)',
+              bg: 'var(--mint-soft)',
+              border: 'var(--mint-border)',
+              dotColor: 'var(--mint)',
+              labelAr: 'جاهز للجراحة',
+              labelEn: 'Ready'
+            },
+            needs_clearance: {
+              color: 'var(--gold)',
+              bg: 'var(--gold-soft)',
+              border: 'var(--gold-border)',
+              dotColor: 'var(--gold)',
+              labelAr: 'يحتاج فحص إضافي',
+              labelEn: 'Needs Clearance'
+            },
+            high_risk: {
+              color: 'var(--crit)',
+              bg: 'var(--crit-soft)',
+              border: 'var(--crit-border)',
+              dotColor: 'var(--crit)',
+              labelAr: 'خطر مرتفع',
+              labelEn: 'High Risk'
+            }
+          }[preOpReadiness];
+
+          return (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                padding: '0.35rem 0.75rem',
+                background: cfg.bg,
+                border: `1.5px solid ${cfg.border}`,
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                color: cfg.color,
+                fontFamily: 'var(--font-heading)',
+                boxShadow: 'var(--shadow-subtle)',
+                transition: 'all 200ms ease'
+              }}
+              title={isAr ? 'مؤشر الجاهزية السريرية للعملية الجراحية' : 'Pre-Op Readiness Status'}
+            >
+              <span
+                style={{
+                  width: '9px',
+                  height: '9px',
+                  borderRadius: '50%',
+                  background: cfg.dotColor,
+                  display: 'inline-block',
+                  boxShadow: `0 0 8px ${cfg.dotColor}`,
+                  animation: preOpReadiness === 'high_risk' ? 'pulse 1.2s infinite' : 'none'
+                }}
+              />
+              <span>{isAr ? cfg.labelAr : cfg.labelEn}</span>
+            </div>
+          );
+        })()}
 
         {/* Pre-Op Clearance Summary Modal Trigger */}
         <button

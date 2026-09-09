@@ -3,12 +3,14 @@ import type { Patient } from '../types/clinical';
 import {
   User, FileText, Activity, Heart, Thermometer, Wind, Droplets,
   AlertTriangle, Plus, Check, Shield, Clock, Pill, History,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Sparkles, Send, Loader2, X
 } from 'lucide-react';
 import { getAssetPath } from '../utils/assetHelper';
+import { askClinicalCopilot } from '../services/clinicalAnalysisService';
 
 interface Props {
   patient: Patient;
+  transcript?: string;
   lang: 'ar' | 'en';
 }
 
@@ -61,13 +63,36 @@ const CountUpVital: React.FC<{ value: string; patientId: string }> = ({ value, p
   return <span>{displayValue}</span>;
 };
 
-export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
+export const RightSidebar: React.FC<Props> = ({ patient, transcript = '', lang }) => {
   const isAr = lang === 'ar';
   const [newNote, setNewNote] = useState('');
   const [isPatientDetailsOpen, setIsPatientDetailsOpen] = useState(true);
   const [notes, setNotes] = useState<string[]>([
     isAr ? 'المريض يلتزم بمواعيد الفحص، ولكن يحتاج مراجعة جرعة الأملوديبين.' : 'Patient is compliant, but Amlodipine dosage needs reassessment.'
   ]);
+
+  /* Clinical Copilot State (Relocated to RightSidebar) */
+  const [copilotQuestion, setCopilotQuestion] = useState<string>('');
+  const [copilotAnswer, setCopilotAnswer] = useState<string | null>(null);
+  const [copilotLoading, setCopilotLoading] = useState<boolean>(false);
+
+  /* Reset Copilot on patient switch */
+  useEffect(() => {
+    setCopilotQuestion('');
+    setCopilotAnswer(null);
+    setCopilotLoading(false);
+  }, [patient.id]);
+
+  const handleAskCopilot = () => {
+    if (copilotLoading || !copilotQuestion.trim()) return;
+    setCopilotLoading(true);
+    askClinicalCopilot(patient, transcript, copilotQuestion.trim(), lang)
+      .then((ans) => {
+        setCopilotAnswer(ans);
+        setCopilotLoading(false);
+      })
+      .catch(() => setCopilotLoading(false));
+  };
 
   const handleAddNote = () => {
     if (!newNote.trim()) return;
@@ -360,6 +385,127 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
             <div style={{ fontSize: '0.72rem', color: 'var(--ink-muted)' }}>{isAr ? 'لا يوجد' : 'None'}</div>
           )}
         </div>
+      </div>
+
+      {/* 4.5. Clinical Copilot Q&A Card (Relocated directly after Medical History) */}
+      <div
+        className="card-box"
+        style={{
+          padding: '0.85rem 1rem',
+          background: 'var(--surface)',
+          borderRadius: 12,
+          flexShrink: 0,
+          border: '1px solid var(--line)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.55rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+            <div
+              style={{
+                width: 28,
+                height: 28,
+                minWidth: 28,
+                flexShrink: 0,
+                borderRadius: '7px',
+                background: 'rgba(168, 139, 196, 0.2)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Sparkles size={15} />
+            </div>
+            <span style={{ fontSize: '0.86rem', fontWeight: 700, fontFamily: 'var(--font-heading)' }}>
+              {isAr ? 'مساعد الاستفسار السريري (Copilot)' : 'Clinical Copilot'}
+            </span>
+          </div>
+          <span style={{ fontSize: '0.64rem', color: 'var(--ink-muted)' }}>
+            {isAr ? 'سؤال حر' : 'Q&A'}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.55rem' }}>
+          <input
+            type="text"
+            value={copilotQuestion}
+            onChange={(e) => setCopilotQuestion(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAskCopilot()}
+            dir={isAr ? 'rtl' : 'ltr'}
+            placeholder={
+              isAr
+                ? 'اسأل عن الحالة أو التداخلات...'
+                : 'Ask about patient or drugs...'
+            }
+            style={{
+              flex: 1,
+              padding: '0.45rem 0.65rem',
+              borderRadius: '7px',
+              border: '1px solid var(--line)',
+              fontSize: '0.76rem',
+              outline: 'none',
+              background: 'var(--bg)',
+              color: 'var(--ink)',
+              fontFamily: 'inherit'
+            }}
+          />
+          <button
+            disabled={copilotLoading || !copilotQuestion.trim()}
+            onClick={handleAskCopilot}
+            style={{
+              background: 'var(--primary-dark)',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '7px',
+              padding: '0.45rem 0.75rem',
+              cursor: copilotLoading || !copilotQuestion.trim() ? 'not-allowed' : 'pointer',
+              opacity: copilotLoading || !copilotQuestion.trim() ? 0.6 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}
+            title={isAr ? 'إرسال السؤال' : 'Send question'}
+          >
+            {copilotLoading ? (
+              <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <Send size={14} />
+            )}
+          </button>
+        </div>
+
+        {/* Copilot Answer Display in Left Sidebar */}
+        {copilotAnswer && (
+          <div
+            className="live-banner-entrance"
+            style={{
+              marginTop: '0.55rem',
+              padding: '0.65rem 0.75rem',
+              borderRadius: '8px',
+              background: 'var(--bg)',
+              border: '1px solid var(--line)',
+              fontSize: '0.76rem',
+              lineHeight: 1.5,
+              color: 'var(--ink)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+              <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Sparkles size={12} />
+                <span>{isAr ? 'إجابة المساعد السريري:' : 'Copilot Guidance:'}</span>
+              </span>
+              <button
+                onClick={() => setCopilotAnswer(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-muted)', padding: '2px' }}
+                title={isAr ? 'إغلاق' : 'Dismiss'}
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <div>{copilotAnswer}</div>
+          </div>
+        )}
       </div>
         </div>
       )}
