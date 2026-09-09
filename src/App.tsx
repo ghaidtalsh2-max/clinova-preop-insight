@@ -9,9 +9,11 @@ import { RightSidebar } from './components/RightSidebar';
 import { PreOpSummaryModal } from './components/PreOpSummaryModal';
 import { KnowledgeBaseModal } from './components/KnowledgeBaseModal';
 import { ApiKeysModal } from './components/ApiKeysModal';
+import SplashScreen from './components/SplashScreen';
 import type { PatientMemoryMatchItem } from './services/clinicalAnalysisService';
 
 export const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState<boolean>(true);
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [fontScale, setFontScale] = useState<number>(1);
@@ -149,6 +151,8 @@ export const App: React.FC = () => {
         onClose={() => setIsApiKeysModalOpen(false)}
         lang={lang}
       />
+
+      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
     </div>
   );
 };
