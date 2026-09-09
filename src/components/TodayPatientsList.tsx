@@ -72,7 +72,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
       style={{
         width: isCollapsed ? '64px' : '260px',
         minWidth: isCollapsed ? '64px' : '260px',
-        background: '#FAF9FC',
+        background: 'var(--bg)',
         borderLeft: isAr ? '1px solid var(--line)' : 'none',
         borderRight: isAr ? 'none' : '1px solid var(--line)',
         display: 'flex',
@@ -93,7 +93,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: isCollapsed ? 'center' : 'space-between',
-          background: '#FFFFFF'
+          background: 'var(--surface)'
         }}
       >
         {!isCollapsed && (
@@ -105,7 +105,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                   height: '28px',
                   borderRadius: '8px',
                   background: 'rgba(168, 139, 196, 0.15)',
-                  color: '#6B4699',
+                  color: 'var(--primary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -114,7 +114,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                 <Users size={15} strokeWidth={2} />
               </div>
               <div>
-                <h3 style={{ fontSize: '0.92rem', margin: 0, fontWeight: 700, color: '#2D2254', fontFamily: 'var(--font-heading)' }}>
+                <h3 style={{ fontSize: '0.92rem', margin: 0, fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-heading)' }}>
                   {isAr ? 'مراجعي اليوم' : "Today's Patients"}
                 </h3>
                 <span style={{ fontSize: '0.72rem', color: 'var(--ink-soft)' }}>
@@ -129,9 +129,9 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
           onClick={onToggleCollapse}
           title={isCollapsed ? (isAr ? 'توسيع القائمة' : 'Expand') : (isAr ? 'طي القائمة' : 'Collapse')}
           style={{
-            background: '#F4F0F9',
-            border: '1px solid #E2D9F3',
-            color: '#6B4699',
+            background: 'var(--bg-secondary, var(--bg))',
+            border: '1px solid var(--line)',
+            color: 'var(--primary)',
             borderRadius: '8px',
             width: '28px',
             height: '28px',
@@ -158,8 +158,8 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                background: '#FFFFFF',
-                border: '1px solid #E8E2D8',
+                background: 'var(--surface)',
+                border: '1px solid var(--line)',
                 borderRadius: '8px',
                 padding: '0.4rem 0.65rem'
               }}
@@ -206,8 +206,8 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                   borderRadius: '14px',
                   fontSize: '0.68rem',
                   fontWeight: activeFilter === tab.id ? 700 : 500,
-                  border: activeFilter === tab.id ? '1px solid #6B4699' : '1px solid #E8E2D8',
-                  background: activeFilter === tab.id ? '#6B4699' : '#FFFFFF',
+                  border: activeFilter === tab.id ? '1px solid var(--primary)' : '1px solid var(--line)',
+                  background: activeFilter === tab.id ? 'var(--primary)' : 'var(--surface)',
                   color: activeFilter === tab.id ? '#FFFFFF' : 'var(--ink-soft)',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
@@ -244,8 +244,8 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
               style={{
                 padding: isCollapsed ? '0.5rem 0' : '0.6rem 0.75rem',
                 borderRadius: '10px',
-                background: isSelected ? '#FFFFFF' : 'transparent',
-                border: isSelected ? '1.5px solid #A88BC4' : '1px solid transparent',
+                background: isSelected ? 'var(--surface)' : 'transparent',
+                border: isSelected ? '1.5px solid var(--primary)' : '1px solid transparent',
                 boxShadow: isSelected ? 'var(--shadow-card)' : 'none',
                 cursor: 'pointer',
                 display: 'flex',
@@ -267,7 +267,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                           height: '32px',
                           borderRadius: '50%',
                           objectFit: 'cover',
-                          border: isSelected ? '1.5px solid #6B4699' : '1px solid #E8E2D8'
+                          border: isSelected ? '1.5px solid var(--primary)' : '1px solid var(--line)'
                         }}
                       />
                       <span
@@ -279,7 +279,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                           height: '8px',
                           borderRadius: '50%',
                           background: statusInfo.dotColor,
-                          border: '1.5px solid #FFFFFF'
+                          border: '1.5px solid var(--surface)'
                         }}
                       />
                     </div>
@@ -290,7 +290,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                         style={{
                           fontSize: '0.82rem',
                           fontWeight: isSelected ? 700 : 600,
-                          color: isSelected ? '#2D2254' : 'var(--ink)',
+                          color: 'var(--ink)',
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis'
@@ -318,7 +318,7 @@ export const TodayPatientsList: React.FC<TodayPatientsListProps> = ({
                   <ChevronRight
                     size={15}
                     style={{
-                      color: isSelected ? '#6B4699' : '#C4BDD0',
+                      color: isSelected ? 'var(--primary)' : 'var(--ink-muted)',
                       transform: isAr ? 'rotate(180deg)' : 'none',
                       flexShrink: 0
                     }}

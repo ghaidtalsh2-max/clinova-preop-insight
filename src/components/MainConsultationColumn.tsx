@@ -501,7 +501,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
       {/* ━━━━━━━━━━ 1. PATIENT MASTER BANNER ━━━━━━━━━━ */}
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--surface)',
           borderBottom: '1px solid var(--line)',
           padding: '1rem 1.75rem',
           display: 'flex',
@@ -597,9 +597,9 @@ export const MainConsultationColumn: React.FC<Props> = ({
 
           <div
             style={{
-              background: '#EEF2FF',
-              color: '#4F46E5',
-              border: '1.5px solid #C7D2FE',
+              background: 'rgba(168, 139, 196, 0.18)',
+              color: 'var(--primary)',
+              border: '1.5px solid var(--lavender-border)',
               borderRadius: '10px',
               padding: '0.6rem 1.1rem',
               fontWeight: 700,
@@ -619,7 +619,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
       {/* ━━━━━━━━━━ 2. PATIENT JOURNEY TIMELINE (In Center) ━━━━━━━━━━ */}
       <div
         style={{
-          background: '#FFFFFF',
+          background: 'var(--surface)',
           borderBottom: '1px solid var(--line)',
           padding: '0.85rem 1.75rem',
           display: 'flex',
@@ -818,7 +818,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
         }}
       >
         {/* ═══ CARD 1: CLINICAL RECORD & DICTATION INTAKE ═══ */}
-        <div className="card-box" style={{ background: '#FFFFFF', borderRadius: 14, border: '1.5px solid var(--line)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <div className="card-box" style={{ background: 'var(--surface)', borderRadius: 14, border: '1.5px solid var(--line)', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
           {/* Header Bar */}
           <div
             style={{
@@ -829,7 +829,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
               justifyContent: 'space-between',
               flexWrap: 'wrap',
               gap: '1rem',
-              background: '#FAF9FC',
+              background: 'var(--bg)',
               borderTopLeftRadius: 14,
               borderTopRightRadius: 14
             }}
@@ -919,7 +919,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                         top: scenarioDropdownPos?.top ?? 140,
                         left: scenarioDropdownPos?.left ?? 20,
                         zIndex: 99999,
-                        background: '#FFFFFF',
+                        background: 'var(--surface)',
                         border: '1.5px solid var(--line)',
                         borderRadius: 12,
                         boxShadow: '0 12px 36px rgba(41, 38, 58, 0.22)',
@@ -954,7 +954,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                             padding: '0.7rem 0.8rem',
                             borderRadius: 9,
                             border: '1px solid var(--line-subtle)',
-                            background: '#FAF9FC',
+                            background: 'var(--bg)',
                             cursor: 'pointer',
                             transition: 'all 0.15s',
                             display: 'flex',
@@ -962,11 +962,11 @@ export const MainConsultationColumn: React.FC<Props> = ({
                             gap: '0.3rem'
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = '#EEF2FF';
-                            e.currentTarget.style.borderColor = '#C7D2FE';
+                            e.currentTarget.style.background = 'rgba(79, 70, 229, 0.12)';
+                            e.currentTarget.style.borderColor = 'var(--primary)';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = '#FAF9FC';
+                            e.currentTarget.style.background = 'var(--bg)';
                             e.currentTarget.style.borderColor = 'var(--line-subtle)';
                           }}
                         >
@@ -1234,7 +1234,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                 padding: '1.15rem 1.35rem',
                 borderRadius: 12,
                 border: '1.5px solid var(--line)',
-                background: '#FAF9FC',
+                background: 'var(--bg)',
                 color: 'var(--ink)',
                 fontSize: '0.96rem',
                 lineHeight: 1.75,
@@ -1246,12 +1246,12 @@ export const MainConsultationColumn: React.FC<Props> = ({
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.background = 'var(--surface)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.12)';
               }}
               onBlur={(e) => {
                 e.currentTarget.style.borderColor = 'var(--line)';
-                e.currentTarget.style.background = '#FAF9FC';
+                e.currentTarget.style.background = 'var(--bg)';
                 e.currentTarget.style.boxShadow = 'none';
               }}
             />
@@ -1445,7 +1445,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
           <div
             className="card-box"
             style={{
-              background: '#FFFFFF',
+              background: 'var(--surface)',
               borderRadius: 16,
               padding: '3.5rem 2rem',
               textAlign: 'center',
@@ -1490,7 +1490,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
         <div
           className="card-box live-banner-entrance"
           style={{
-            background: '#FFFFFF',
+            background: 'var(--surface)',
             padding: '1.15rem 1.4rem',
             borderRadius: 14,
             boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
@@ -1535,7 +1535,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             <div
               style={{
                 padding: '1.4rem 1rem',
-                background: '#FAF9FC',
+                background: 'var(--bg)',
                 borderRadius: 10,
                 border: '1.5px dashed var(--line)',
                 textAlign: 'center',
@@ -1551,7 +1551,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             <>
               <div
                 style={{
-                  background: '#FAF9FC',
+                  background: 'var(--bg)',
                   borderRadius: 10,
                   padding: '1rem 1.15rem',
                   fontSize: '0.9rem',
@@ -1574,9 +1574,9 @@ export const MainConsultationColumn: React.FC<Props> = ({
                       borderRadius: 8,
                       fontSize: '0.84rem',
                       fontWeight: 700,
-                      border: `1.5px solid ${smartAnswer === opt ? '#4F46E5' : 'var(--line)'}`,
-                      background: smartAnswer === opt ? '#EEF2FF' : '#FFFFFF',
-                      color: smartAnswer === opt ? '#4F46E5' : 'var(--ink)',
+                      border: `1.5px solid ${smartAnswer === opt ? 'var(--primary)' : 'var(--line)'}`,
+                      background: smartAnswer === opt ? 'var(--lavender-soft)' : 'var(--surface)',
+                      color: smartAnswer === opt ? 'var(--primary-dark)' : 'var(--ink)',
                       cursor: 'pointer',
                       transition: 'all 0.15s'
                     }}
@@ -1595,7 +1595,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
         </div>
 
         {/* ═══ CARD 3: WHAT NEEDS ATTENTION ═══ */}
-        <div className="card-box" style={{ background: '#FFFFFF', padding: '1.15rem 1.4rem', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <div className="card-box" style={{ background: 'var(--surface)', padding: '1.15rem 1.4rem', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
               <div
@@ -1634,7 +1634,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             <div
               style={{
                 padding: '1.4rem 1rem',
-                background: '#FAF9FC',
+                background: 'var(--bg)',
                 borderRadius: 10,
                 border: '1.5px dashed var(--line)',
                 textAlign: 'center',
@@ -1698,7 +1698,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
         </div>
 
         {/* ═══ CARD 4: CLINICAL POSSIBILITIES ═══ */}
-        <div className="card-box" style={{ background: '#FFFFFF', padding: '1.15rem 1.4rem', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <div className="card-box" style={{ background: 'var(--surface)', padding: '1.15rem 1.4rem', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
               <div
@@ -1737,7 +1737,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
             <div
               style={{
                 padding: '1.75rem 1.25rem',
-                background: '#FAF9FC',
+                background: 'var(--bg)',
                 borderRadius: 12,
                 border: '1.5px dashed var(--line)',
                 textAlign: 'center',
@@ -1891,9 +1891,9 @@ export const MainConsultationColumn: React.FC<Props> = ({
                                   borderRadius: 6,
                                   fontSize: '0.74rem',
                                   fontWeight: 700,
-                                  border: isSelected ? '1.5px solid #D97706' : '1px solid var(--gold-border)',
-                                  background: isSelected ? '#FEF3C7' : '#FFFFFF',
-                                  color: isSelected ? '#92400E' : 'var(--ink)',
+                                  border: isSelected ? '1.5px solid var(--gold)' : '1px solid var(--line)',
+                                  background: isSelected ? 'var(--gold-soft)' : 'var(--surface)',
+                                  color: isSelected ? 'var(--gold)' : 'var(--ink)',
                                   cursor: 'pointer',
                                   transition: 'all 0.15s'
                                 }}
@@ -1918,7 +1918,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
         </div>
 
         {/* ═══ CARD 4.5: CLINICAL KNOWLEDGE BASE & PROTOCOL REFERENCES ═══ */}
-        <div className="card-box" style={{ background: '#FFFFFF', padding: '1.15rem 1.4rem', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+        <div className="card-box" style={{ background: 'var(--surface)', padding: '1.15rem 1.4rem', borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
               <div style={{
@@ -2026,7 +2026,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
                     fontSize: '0.72rem',
                     fontWeight: 700,
                     textDecoration: 'none',
-                    background: '#FFFFFF',
+                    background: 'var(--surface)',
                     border: '1px solid var(--line)',
                     padding: '0.35rem 0.65rem',
                     borderRadius: 6,

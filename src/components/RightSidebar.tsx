@@ -83,7 +83,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
         minWidth: 320,
         maxWidth: 340,
         flexShrink: 0,
-        background: '#FAF9FC',
+        background: 'var(--bg)',
         borderRight: isAr ? 'none' : '1px solid var(--line)',
         borderLeft: isAr ? '1px solid var(--line)' : 'none',
         height: 'calc(100vh - var(--header-height))',
@@ -98,7 +98,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
         boxSizing: 'border-box',
         zIndex: 20,
         scrollbarWidth: 'thin',
-        scrollbarColor: 'var(--primary) #F1F5F9'
+        scrollbarColor: 'var(--primary) var(--line)'
       }}
     >
       {/* 1. Patient Profile Card - Sticky so photo and icon NEVER disappear */}
@@ -192,7 +192,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       {isPatientDetailsOpen && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', flexShrink: 0 }}>
           {/* 2. Vital Signs Card */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12, flexShrink: 0 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: 'var(--surface)', borderRadius: 12, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{
@@ -213,11 +213,11 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
         </div>
 
         {[
-          { icon: <Activity size={15} />, label: isAr ? 'ضغط الدم' : 'Blood Pressure', val: patient.vitals.bp, color: '#DC2626', badge: isAr ? 'مرتفع قليلاً' : 'Slightly High' },
+          { icon: <Activity size={15} />, label: isAr ? 'ضغط الدم' : 'Blood Pressure', val: patient.vitals.bp, color: 'var(--crit)', badge: isAr ? 'مرتفع قليلاً' : 'Slightly High' },
           { icon: <Heart size={15} />, label: isAr ? 'نبض القلب' : 'Heart Rate', val: `${patient.vitals.heartRate} bpm`, color: '#E11D48' },
-          { icon: <Thermometer size={15} />, label: isAr ? 'حرارة الجسم' : 'Temperature', val: patient.vitals.temp, color: '#D97706' },
+          { icon: <Thermometer size={15} />, label: isAr ? 'حرارة الجسم' : 'Temperature', val: patient.vitals.temp, color: 'var(--amber)' },
           { icon: <Droplets size={15} />, label: isAr ? 'تشبع الأكسجين' : 'SpO₂', val: patient.vitals.spo2, color: '#0891B2' },
-          { icon: <Wind size={15} />, label: isAr ? 'معدل التنفس' : 'Respiratory', val: '16 /min', color: '#059669' },
+          { icon: <Wind size={15} />, label: isAr ? 'معدل التنفس' : 'Respiratory', val: '16 /min', color: 'var(--mint)' },
         ].map((v, i) => (
           <div
             key={i}
@@ -244,7 +244,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
                 <CountUpVital value={v.val} patientId={patient.id} />
               </strong>
               {v.badge && (
-                <span style={{ fontSize: '0.62rem', background: '#FEF2F2', color: '#DC2626', padding: '0.1rem 0.4rem', borderRadius: 4, fontWeight: 700 }}>
+                <span style={{ fontSize: '0.62rem', background: 'var(--crit-soft)', color: 'var(--crit)', padding: '0.1rem 0.4rem', borderRadius: 4, fontWeight: 700, border: '1px solid var(--crit-border)' }}>
                   {v.badge}
                 </span>
               )}
@@ -254,12 +254,13 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       </div>
 
       {/* 3. Medications Card */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: 'var(--surface)', borderRadius: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{
               width: 28, height: 28, minWidth: 28, flexShrink: 0, borderRadius: '7px',
-              background: '#FEF3C7', color: '#D97706',
+              background: 'var(--gold-soft)', color: 'var(--gold)',
+              border: '1px solid var(--gold-border)',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
               <Pill size={15} />
@@ -281,7 +282,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
               style={{
                 padding: '0.5rem 0',
                 borderTop: i ? '1px solid var(--line-subtle)' : 'none',
-                background: isConflict ? '#FFFBEB' : 'transparent',
+                background: isConflict ? 'var(--crit-soft)' : 'transparent',
                 borderRadius: isConflict ? '6px' : '0',
                 margin: isConflict ? '0.2rem -0.3rem' : '0',
                 paddingInline: isConflict ? '0.3rem' : '0'
@@ -294,9 +295,10 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.2rem', fontSize: '0.68rem' }}>
                 <span style={{ color: 'var(--ink-muted)' }}>{m.sector || (isAr ? 'وزارة الصحة' : 'MOH')}</span>
                 <span style={{
-                  color: isConflict ? '#DC2626' : '#059669',
+                  color: isConflict ? 'var(--crit)' : 'var(--mint)',
                   fontWeight: 700,
-                  background: isConflict ? '#FEE2E2' : '#ECFDF5',
+                  background: isConflict ? 'var(--crit-soft)' : 'var(--mint-soft)',
+                  border: `1px solid ${isConflict ? 'var(--crit-border)' : 'var(--mint-border)'}`,
                   padding: '0.12rem 0.45rem',
                   borderRadius: 4
                 }}>
@@ -309,7 +311,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       </div>
 
       {/* 4. Patient History Card */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: 'var(--surface)', borderRadius: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{
@@ -363,7 +365,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       )}
 
       {/* 5. Clinical Notes Card (Interactive) */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12, flexShrink: 0 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: 'var(--surface)', borderRadius: 12, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{
@@ -394,7 +396,8 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
               border: '1px solid var(--line)',
               fontSize: '0.76rem',
               outline: 'none',
-              background: 'var(--bg)'
+              background: 'var(--bg)',
+              color: 'var(--ink)'
             }}
           />
           <button
@@ -437,7 +440,7 @@ export const RightSidebar: React.FC<Props> = ({ patient, lang }) => {
       </div>
 
       {/* 6. Recent Activity */}
-      <div className="card-box" style={{ padding: '0.85rem 1rem', background: '#FFFFFF', borderRadius: 12, flexShrink: 0 }}>
+      <div className="card-box" style={{ padding: '0.85rem 1rem', background: 'var(--surface)', borderRadius: 12, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
             <div style={{

@@ -85,6 +85,8 @@
   --surface: #2B2733;          /* Panels */
   --line: #383244;
   --line-subtle: #2E2938;
+  --bg-canvas: #211E27;
+  --border-medium: #383244;
 
   --ink: #F4F0EA;              /* Warm text */
   --ink-soft: #AAA3B2;         /* Muted */
@@ -124,6 +126,30 @@
   --shadow-subtle: 0 1px 4px rgba(0, 0, 0, 0.28);
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.35);
   --shadow-float: 0 12px 35px rgba(0, 0, 0, 0.5);
+}
+
+/* Universal Dark Mode Safety Overrides to eliminate rogue hardcoded light backgrounds */
+[data-theme="dark"] .card-box {
+  background-color: var(--surface) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] textarea {
+  background-color: var(--bg) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="search"] {
+  color: var(--ink) !important;
+}
+
+[data-theme="dark"] select {
+  background-color: var(--surface) !important;
+  border-color: var(--line) !important;
+  color: var(--ink) !important;
 }
 
 /* Base reset */
