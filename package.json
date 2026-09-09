@@ -23,6 +23,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "oxlint": "^1.79.0",
     "typescript": "~6.0.2",
+    "vercel": "^59.13.1",
     "vite": "^6.2.0"
   },
   "optionalDependencies": {
