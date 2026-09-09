@@ -36,8 +36,8 @@ Patient: Yes, my vision blurs slightly for a few seconds and improves when I sit
     analysis: {
       extractedInformation: {
         symptoms: [
-          { text: 'Orthostatic dizziness', textAr: 'دوخة وضعية عند الوقوف المفاجئ' },
-          { text: 'Transient blurred vision', textAr: 'غشاوة بصرية عابرة عند النهوض' }
+          { text: 'Orthostatic dizziness upon standing', textAr: 'دوخة وضعية عند الوقوف المفاجئ من الفراش' },
+          { text: 'Transient blurred vision lasting seconds', textAr: 'غشاوة بصرية عابرة لعدة ثوانٍ تزول فور الجلوس' }
         ],
         duration: '3 weeks',
         trigger: 'Standing up quickly from bed',
@@ -85,25 +85,26 @@ Patient: Yes, my vision blurs slightly for a few seconds and improves when I sit
       ],
       smartQuestion: {
         id: 'sq-101',
-        question: 'Has the patient experienced any syncope (loss of consciousness), falls, or chest tightness during these dizziness episodes?',
-        questionAr: 'المريض ذكر الدوخة عند الوقوف دون إغماء كامل. هل عانى من أي نوبات سقوط مفاجئ أو فقدان للوعي أو ضيق بالصدر؟',
+        question: 'Has the patient checked blood pressure lying down versus after standing for 3 minutes, and have these dizzy spells ever resulted in loss of consciousness, falls, or chest pain?',
+        questionAr: 'المريض ذكر الدوخة عند الوقوف دون إغماء كامل. هل تم قياس ضغط الدم مستلقياً ثم بعد الوقوف لـ 3 دقائق، وهل تسببت الدوخة في أي سقوط أو فقدان للوعي؟',
         options: ['نعم', 'لا', 'غير متأكد']
       },
       clinicalPossibilities: [
         {
           id: 'pos-101',
-          name: 'Orthostatic Hypotension (Drug-Induced)',
-          nameAr: 'هبوط الضغط الانتصابي الدوائي (ناتج عن حاصرات قنوات الكالسيوم)',
+          name: 'Drug-Induced Orthostatic Hypotension (Secondary to Calcium Channel Blocker / Amlodipine)',
+          nameAr: 'هبوط ضغط انتصابي دوائي (ناجم عن موسعات الأوعية وأملوديبين 5 ملجم)',
           likelihood: 'Higher likelihood',
+          probability: 84,
           evidenceFromConversation: [
-            'Dizziness specifically triggered upon standing quickly',
-            'Symptoms started 3 weeks ago',
-            'Daily morning blood pressure pill reported'
+            'Dizziness specifically triggered upon standing quickly from bed',
+            'Transient blurred vision lasting seconds, resolving promptly upon sitting',
+            'Daily morning blood pressure pill reported for 3 weeks'
           ],
           evidenceFromConversationAr: [
-            'تحفز الدوخة حصراً عند النهوض السريع من الفراش',
-            'بدء الأعراض منذ 3 أسابيع',
-            'تناول حبة ضغط يومية صباحاً'
+            'تحفز الدوخة حصراً وبشكل متكرر عند النهوض السريع من الفراش',
+            'غشاوة بصرية عابرة لثوانٍ تزول فور الجلوس أو الاستلقاء',
+            'تناول حبة ضغط بيضاء صباحية يومياً مستمر عليها من 3 أسابيع'
           ],
           evidenceFromRecord: [
             'Amlodipine 5mg active prescription from Al-Malaz PHC (MOH)',
@@ -115,24 +116,62 @@ Patient: Yes, my vision blurs slightly for a few seconds and improves when I sit
           ],
           discriminatingQuestions: [
             {
-              question: 'Does the dizziness resolve within 1-2 minutes after sitting down?',
-              questionAr: 'هل تزول الدوخة وتتحسن الرؤية خلال دقيقة إلى دقيقتين بمجرد الجلوس أو الاستلقاء؟'
+              question: 'Does the dizziness and blurred vision resolve completely within 1 to 2 minutes after sitting or lying down?',
+              questionAr: 'هل تزول الدوخة وتتحسن الرؤية تماماً خلال دقيقة إلى دقيقتين بمجرد الجلوس أو الاستلقاء؟'
             }
           ]
         },
         {
           id: 'pos-102',
-          name: 'Autonomic Neuropathy or Volume Depletion',
-          nameAr: 'اعتلال عصبي لاإرادي سكري أو نقص نسبي في سوائل الجسم',
+          name: 'Diabetic Autonomic Neuropathy with Impaired Vasomotor Reflexes',
+          nameAr: 'اعتلال عصبي لاإرادي سكري مع ضعف الاستجابة المنعكسة لضغط الدم',
           likelihood: 'Moderate likelihood',
-          evidenceFromConversation: ['Mild blurred vision with posture changes'],
-          evidenceFromConversationAr: ['غشاوة بصرية خفيفة مع التغيرات الوضعية'],
-          evidenceFromRecord: ['Type 2 Diabetes for over 5 years (Metformin 500mg BID)'],
-          evidenceFromRecordAr: ['داء السكري لأكثر من 5 سنوات ومستمر على ميتفورمين'],
+          probability: 64,
+          evidenceFromConversation: [
+            'Persistent postural dizziness for 3 weeks without spontaneous recovery',
+            'Absence of compensatory reflex tachycardia reported upon standing'
+          ],
+          evidenceFromConversationAr: [
+            'أعراض دوخة وضعية مستمرة منذ 3 أسابيع دون تحسن تلقائي',
+            'غياب الخفقان التعويضي السريع الملحوظ عند النهوض'
+          ],
+          evidenceFromRecord: [
+            'Type 2 Diabetes Mellitus documented for over 5 years on Metformin',
+            'Resting baseline heart rate 82 bpm'
+          ],
+          evidenceFromRecordAr: [
+            'داء السكري النوع الثاني لأكثر من 5 سنوات ومستمر على ميتفورمين',
+            'النبض المكتبي 82 د/د دون استجابة تسارعية كافية'
+          ],
           discriminatingQuestions: [
             {
-              question: 'Has the patient noticed dry mouth or decreased fluid intake recently?',
-              questionAr: 'هل يعاني المريض من جفاف بالفم أو قلة شرب السوائل خاصة في أوقات الصيف؟'
+              question: 'Does the patient experience peripheral numbness/tingling in the feet, abnormal sweating, or early gastrointestinal fullness?',
+              questionAr: 'هل يشكو المريض من خدر وتنميل بأطراف القدمين، أو بطء هضم واضطراب تعرق (علامات اعتلال عصبي سكري)؟'
+            }
+          ]
+        },
+        {
+          id: 'pos-103',
+          name: 'Preoperative Volume Depletion / Subclinical Dehydration',
+          nameAr: 'نقص نسبي في حجم السوائل والجفاف في مرحلة التحضير للجراحة',
+          likelihood: 'Lower likelihood',
+          probability: 38,
+          evidenceFromConversation: [
+            'Dizziness predominantly pronounced in early morning fasting hours'
+          ],
+          evidenceFromConversationAr: [
+            'تفاقم أعراض الدوخة في ساعات الصباح الباكر قبل شرب السوائل'
+          ],
+          evidenceFromRecord: [
+            'No documented IV hydration orders in pre-admission chart'
+          ],
+          evidenceFromRecordAr: [
+            'عدم وجود خطة ترطيب وريدي استباقية مسجلة'
+          ],
+          discriminatingQuestions: [
+            {
+              question: 'Has the patient had noticeably decreased daily fluid intake or experienced frequent dry mouth?',
+              questionAr: 'هل يعاني المريض من جفاف ملحوظ بالحلق أو قلة شرب الماء والسوائل اليومية؟'
             }
           ]
         }
@@ -224,24 +263,93 @@ Doctor: Excellent, the unified EHR shows your ECG from March 2025: Normal Sinus 
       ],
       smartQuestion: {
         id: 'sq-201',
-        question: 'Can the patient climb two flights of stairs or walk briskly without chest discomfort or significant shortness of breath?',
-        questionAr: 'هل يستطيع المريض صعود طابقين من الدرج أو المشي السريع دون ألم في الصدر أو ضيق شديد في التنفس (قدرة وظيفية ≥ 4 METs)؟',
+        question: 'Since the verified KFMC ECG demonstrates normal sinus rhythm from 6 months ago, can the patient climb two flights of stairs or walk briskly (≥ 4 METs) without chest discomfort or shortness of breath?',
+        questionAr: 'بما أن السجل الموحد أثبت سلامة تخطيط القلب بمدينة الملك فهد الطبية قبل 6 أشهر، هل يستطيع المريض صعود طابقين من الدرج أو المشي السريع (≥ 4 METs) دون ثقل بالصدر أو ضيق تنفس؟',
         options: ['نعم', 'لا', 'غير متأكد']
       },
       clinicalPossibilities: [
         {
           id: 'pos-201',
-          name: 'Stable Cardiac Status (Low Pre-Operative Risk)',
-          nameAr: 'استقرار قلبي وعائي منخفض المخاطر الجراحية',
+          name: 'Stable Normal Sinus Rhythm with Adequate Functional Capacity (Low Preoperative Cardiac Risk - NICE NG45 Compliant)',
+          nameAr: 'استقرار قلبي وعائي سليم (ريثم جيبي طبيعي مع خطورة جراحية منخفضة وفق معايير NICE NG45)',
           likelihood: 'Higher likelihood',
-          evidenceFromConversation: ['Recent ECG documented as normal with mild tachycardia 6 months ago'],
-          evidenceFromConversationAr: ['تخطيط قلب موثق قبل 6 أشهر سليم مع نبض متسارع بسيط'],
-          evidenceFromRecord: ['Resting HR 82 bpm, Blood Pressure 138/88 mmHg, SpO2 97%'],
-          evidenceFromRecordAr: ['النبض المكتبي 82 د/د، الضغط 138/88 ملم زئبق، الأكسجين 97%'],
+          probability: 86,
+          evidenceFromConversation: [
+            'Physician confirmed retrieved ECG shows normal sinus rhythm without ischemic ST changes',
+            'Patient was informed at KFMC that test was normal apart from mild baseline pulse elevation',
+            'No active chest discomfort or exertion limitation reported'
+          ],
+          evidenceFromConversationAr: [
+            'السجل المسترجع من مدينة الملك فهد الطبية يثبت ريثم جيبي سليم بدون علامات نقص تروية أو جلطة',
+            'إبلاغ المريض بسلامة فحص القلب في مراجعته السابقة بمدينة الملك فهد الطبية',
+            'عدم وجود أي شكوى من ألم صدري أو تراجع القدرة على المشي'
+          ],
+          evidenceFromRecord: [
+            'KFMC 12-lead ECG: Normal Sinus Rhythm at 82 bpm, normal axis, normal intervals',
+            'HbA1c 7.1% (acceptable pre-op glycemic control)'
+          ],
+          evidenceFromRecordAr: [
+            'تخطيط 12-قناة بمدينة الملك فهد الطبية: ريثم جيبي 82 د/د وفترات تخطيط طبيعية',
+            'تراكمي السكر 7.1% يعكس تحكماً مقبولاً بالسكري قبل التخدير'
+          ],
           discriminatingQuestions: [
             {
-              question: 'Has the patient felt any new palpitations or irregular heartbeats recently?',
-              questionAr: 'هل شعر المريض بأي خفقان غير منتظم أو رفرفة مفاجئة في الصدر مؤخراً؟'
+              question: 'Can the patient climb two flights of stairs or walk up a hill briskly without chest pain or shortness of breath (Functional Capacity ≥ 4 METs)?',
+              questionAr: 'هل يستطيع المريض صعود طابقين من الدرج أو المشي السريع دون ألم في الصدر أو ضيق تنفس (قدرة وظيفية ≥ 4 METs تؤكد أمان التخدير)؟'
+            }
+          ]
+        },
+        {
+          id: 'pos-202',
+          name: 'Physiologic / White-Coat Sinus Tachycardia (Stress-Induced vs Subclinical Metabolic Strain)',
+          nameAr: 'تسارع نبض جيبي فسيولوجي تفاعلي (مرتبط برهبة العيادات أو إجهاد أيضي خفيف مع استبعاد اعتلال الشرايين)',
+          likelihood: 'Moderate likelihood',
+          probability: 62,
+          evidenceFromConversation: [
+            'Mild pulse elevation noted during hospital visit at KFMC',
+            'Current resting heart rate 82 bpm during clinical encounter'
+          ],
+          evidenceFromConversationAr: [
+            'ملاحظة تسارع بسيط في النبض وقت التقييم داخل المستشفى',
+            'النبض المكتبي الحالي 82 د/د في بيئة العيادة'
+          ],
+          evidenceFromRecord: [
+            'No structural heart disease on prior KFMC evaluations',
+            'History of Type 2 Diabetes and Hypertension under treatment'
+          ],
+          evidenceFromRecordAr: [
+            'عدم وجود اعتلال بنيوي بعضلة القلب في فحوصات مدينة الملك فهد السابقة',
+            'تاريخ إصابة بالسكري والضغط تحت العلاج'
+          ],
+          discriminatingQuestions: [
+            {
+              question: 'Does the heart rate normalize below 75 bpm during relaxation at home, and does the patient consume high caffeine prior to clinic visits?',
+              questionAr: 'هل ينخفض النبض لمعدله الطبيعي الهادئ في المنزل، وهل يتناول المريض منبهات كالقهوة والشاي بكثرة قبل مراجعة العيادة؟'
+            }
+          ]
+        },
+        {
+          id: 'pos-203',
+          name: 'Silent Diabetic Myocardial Ischemia (Risk Factor Clearance Consideration)',
+          nameAr: 'اشتباه إقفار قلبي صامت لدى مريض السكري (يستوجب التحقق من غياب الأعراض غير النمطية)',
+          likelihood: 'Lower likelihood',
+          probability: 35,
+          evidenceFromConversation: [
+            'Patient has long-standing diabetes and hypertensive profile'
+          ],
+          evidenceFromConversationAr: [
+            'إصابة مزمنة بالسكري والضغط تستدعي التيقن من غياب الإقفار الصامت'
+          ],
+          evidenceFromRecord: [
+            'Documented Diabetes for >5 years (Metformin 500mg BID)'
+          ],
+          evidenceFromRecordAr: [
+            'سكري لأكثر من 5 سنوات ومستمر على ميتفورمين'
+          ],
+          discriminatingQuestions: [
+            {
+              question: 'Has the patient experienced unexplained fatigue, unusual sweating, or indigestion-like pressure during physical exertion?',
+              questionAr: 'هل شعر المريض بإرهاق غير مبرر أو تعرق بارد أو ثقل بالصدر يشبه عسر الهضم عند بذل جهد بدني؟'
             }
           ]
         }
@@ -334,30 +442,66 @@ Doctor: But the unified medical record documents a severe allergic reaction (ras
       ],
       smartQuestion: {
         id: 'sq-301',
-        question: 'Did the patient ever experience facial swelling, severe itching, or difficulty breathing after receiving an antibiotic injection or pills in 2021?',
-        questionAr: 'هل تتذكر حدوث حكة شديدة أو تورم بالوجه والشفاه أو صعوبة في التنفس استدعت مراجعة الطوارئ بعد أخذ حقنة مضاد حيوي عام 2021؟',
+        question: 'To resolve this critical discrepancy safely: did your 2021 hospital admission involve tongue/facial swelling or throat tightness after an antibiotic injection, and have you taken any penicillin derivatives since?',
+        questionAr: 'لحسم هذا التعارض الحرج لسلامتك: هل شملت مراجعة الطوارئ عام 2021 تورماً بالوجه والشفاه أو صعوبة بالتنفس بعد إبرة مضاد حيوي، وهل تناولت أي بنسلين بعدها؟',
         options: ['نعم', 'لا', 'غير متأكد']
       },
       clinicalPossibilities: [
         {
           id: 'pos-301',
-          name: 'Confirmed Penicillin Hypersensitivity with Patient Misremembering',
-          nameAr: 'حساسية بنسلين مثبتة مع نسيان المريض لتفاصيل الحادثة السابقة',
+          name: 'True IgE-Mediated Penicillin Anaphylaxis with Patient Recall Deficit (High Risk of Intraoperative Bronchospasm)',
+          nameAr: 'حساسية مفرطة حقيقية للبنسلين (وساطة IgE مناعية مع صدمة تأقية سابقة نسيها المريض)',
           likelihood: 'Higher likelihood',
-          evidenceFromConversation: ['Patient states he takes everything normally and unaware of allergy record'],
-          evidenceFromConversationAr: ['المريض يعتقد أنه يأخذ كل الأدوية بصورة طبيعية وغير مدرك للسجل'],
+          probability: 88,
+          evidenceFromConversation: [
+            'Patient demonstrates complete lack of awareness regarding his severe allergy history',
+            'Direct verbal denial contradicted by authoritative hospital record'
+          ],
+          evidenceFromConversationAr: [
+            'نفي المريض الشفهي التام لوجود أي حساسية ناتج عن نسيان تفاصيل التنويم القديم',
+            'التعارض الصريح بين كلام المريض وسجل الطوارئ بالحرس الوطني'
+          ],
           evidenceFromRecord: [
-            'Allergy Tag: Penicillin (Severe Anaphylaxis & Urticaria) at NGHA Hospital',
-            'Cross-reactive cephalosporin precaution required'
+            'Documented NGHA emergency admission (2021) with bronchospasm, facial urticaria, and oxygen desaturation post-penicillin',
+            'Strict red-flag allergy tag in unified system'
           ],
           evidenceFromRecordAr: [
-            'وسم الحساسية: بنسلين (صدمة تأقية وشرى) بمستشفى الحرس الوطني',
-            'وجوب الحذر من التفاعلات المتصالبة مع السيفالوسبورينات'
+            'توثيق تنويم طارئ بالحرس الوطني (2021) بضيق تنفس وشرى جلدي وهبوط أكسجين بعد البنسلين',
+            'وسم تحذيري أحمر دائم بالحساسية المفرطة في النظام الإلكتروني'
           ],
           discriminatingQuestions: [
             {
-              question: 'Has the patient taken Amoxicillin or Augmentin recently without any reaction?',
-              questionAr: 'هل تناول المريض أي دواء أوجمنتين أو أموكسيسيلين مؤخراً دون مشاكل؟'
+              question: 'Did the 2021 emergency event require intramuscular epinephrine (adrenaline), IV hydrocortisone, and an overnight observation stay?',
+              questionAr: 'هل استدعت نوبة 2021 إعطاء حقنة إبينفرين (أدرينالين) أو كورتيزون وريدي وتنويم إسعافي لمراقبة مجرى التنفس؟'
+            }
+          ]
+        },
+        {
+          id: 'pos-302',
+          name: 'Non-Anaphylactic Cutaneous Reaction / Viral Exanthem Misclassified as Severe Allergy',
+          nameAr: 'تفاعل جلدي غير تأقي أو طفح عابر تم تصنيفه خطأ كصدمة تأقية مهددة للحياة',
+          likelihood: 'Moderate likelihood',
+          probability: 58,
+          evidenceFromConversation: [
+            'Patient firmly asserts taking all medications normally without any adverse reaction in daily life',
+            'Possible misinterpretation by patient or over-labeling by primary emergency recorder'
+          ],
+          evidenceFromConversationAr: [
+            'تأكيد المريض أنه يأخذ الأدوية والمسكنات بشكل روتيني دون حدوث أي تفاعل ضار',
+            'احتمالية الخلط بين الطفح الدوائي البسيط والصدمة التأقية الشديدة وقت التوثيق'
+          ],
+          evidenceFromRecord: [
+            'Lack of formal skin prick testing or follow-up allergy clinic confirmation note in chart',
+            'No repeated exposures documented since 2021'
+          ],
+          evidenceFromRecordAr: [
+            'غياب تقرير اختبار وخز الجلد التخصصي لتأكيد وجود الأجسام المضادة IgE',
+            'عدم تكرار صرف أي مضاد بيتا لاكتام منذ تلك الحادثة'
+          ],
+          discriminatingQuestions: [
+            {
+              question: 'Has the patient safely taken any cephalosporin (e.g. Cefuroxime/Zinnat, Cephalexin/Keflex) or Augmentin recently without any allergic reaction?',
+              questionAr: 'هل تناول المريض أي مضاد حيوي من عائلة السيفالوسبورين (مثل زينات أو كيفلكس) مؤخراً دون أي حكة أو تورم بالشفاه؟'
             }
           ]
         }
@@ -446,24 +590,68 @@ Patient: No black stools, thank God, but the heartburn is bothersome, especially
       ],
       smartQuestion: {
         id: 'sq-401',
-        question: 'Has the patient checked baseline serum creatinine and eGFR recently, or experienced changes in urine output?',
-        questionAr: 'هل فحص المريض وظائف الكلى (الكرياتينين ومعدل الترشيح eGFR) مؤخراً، أو لاحظ أي تغير في كمية أو لون البول؟',
+        question: 'Has the patient had a recent serum creatinine/eGFR check, and can Ibuprofen be immediately switched to Paracetamol with a proton-pump inhibitor (PPI) prior to surgery?',
+        questionAr: 'هل فحص المريض وظائف الكلى (الكرياتينين ومعدل الترشيح eGFR) مؤخراً، وهل يمكن إيقاف البروفين فوراً واستبداله بالباراسيتامول مع دواء حامٍ للمعدة (PPI) قبل العملية؟',
         options: ['نعم', 'لا', 'غير متأكد']
       },
       clinicalPossibilities: [
         {
           id: 'pos-401',
-          name: 'NSAID-Induced Gastropathy & Impaired Renal Perfusion Risk',
-          nameAr: 'اعتلال هضمي ناتج عن مضادات الالتهاب مع خطر تراجع التروية الكلوية',
+          name: 'NSAID-Induced Acute Gastritis & Peptic Mucosal Ulceration Risk',
+          nameAr: 'التهاب المعدة الحاد وتضرر الغشاء المخاطي المعدي الناتج عن مضادات الالتهاب (NSAIDs)',
           likelihood: 'Higher likelihood',
-          evidenceFromConversation: ['Ibuprofen 400mg taken twice daily for 2 weeks', 'Epigastric pain and heartburn'],
-          evidenceFromConversationAr: ['تناول إيبوبروفين 400 ملجم مرتين يومياً لأسبوعين', 'ألم وحرقة بفم المعدة وغثيان'],
-          evidenceFromRecord: ['Active Amlodipine prescription', 'Type 2 Diabetes Mellitus'],
-          evidenceFromRecordAr: ['علاج أملوديبين لضغط الدم', 'إصابة بالسكري النوع الثاني'],
+          probability: 86,
+          evidenceFromConversation: [
+            'Self-administration of OTC Ibuprofen 400mg twice daily for 2 continuous weeks',
+            'Onset of sharp epigastric burning pain and nausea aggravated when fasting',
+            'Absence of frank hematemesis or melena (suggesting pre-ulcerative mucosal injury)'
+          ],
+          evidenceFromConversationAr: [
+            'تناول مسكن إيبوبروفين 400 ملجم مرتين يومياً لأسبوعين متتاليين بدون وصفة',
+            'بدء حرقة وألم فم المعدة والغثيان بعد الأكل وتفاقمه أثناء الصيام',
+            'غياب القيء المدمم أو البراز الأسود (يشير لمرحلة التهاب مخاطي حاد يسبق القرحة النازفة)'
+          ],
+          evidenceFromRecord: [
+            'No prior PPI or gastric protection prescribed in unified record',
+            'Active anti-hypertensive regimen requiring perioperative stabilization'
+          ],
+          evidenceFromRecordAr: [
+            'عدم وجود وصفة حماية للمعدة (مثل أوميبرازول) في السجل الموحد',
+            'خضوع المريض لخطة خافضات ضغط تتطلب استقرار التروية قبل الجراحة'
+          ],
           discriminatingQuestions: [
             {
-              question: 'Does the epigastric burning improve after taking an antacid or food?',
-              questionAr: 'هل تخف حرقة فم المعدة عند تناول مضادات الحموضة أو الحليب؟'
+              question: 'Does the epigastric burning awaken the patient from sleep at night, and does it temporarily ease with milk or antacid syrup?',
+              questionAr: 'هل يوقظ ألم وحرقة المعدة المريض من النوم ليلاً، وهل يخف مؤقتاً عند شرب الحليب أو تناول شراب مضاد للحموضة؟'
+            }
+          ]
+        },
+        {
+          id: 'pos-402',
+          name: 'Subclinical Hemodynamic Renal Impairment (NSAID-Amlodipine Nephrotoxicity Interaction)',
+          nameAr: 'قصور كلوي ديناميكي وتراجع التروية الكلوية (تداخل الإيبوبروفين مع أملوديبين وأدوية الضغط)',
+          likelihood: 'Moderate likelihood',
+          probability: 68,
+          evidenceFromConversation: [
+            'High-dose NSAID exposure in a patient with chronic hypertension',
+            'Perioperative risk of acute tubular injury during surgical anesthesia and fluid shifts'
+          ],
+          evidenceFromConversationAr: [
+            'تناول جرعات عالية من البروفين بالتزامن مع علاج الضغط الشرياني',
+            'خطر هبوط التروية الكلوية الحاد أثناء التخدير الجراحي وتغيرات السوائل'
+          ],
+          evidenceFromRecord: [
+            'Documented Type 2 Diabetes for 5 years and Essential Hypertension (heightened baseline nephropathy risk)',
+            'Baseline serum creatinine and eGFR need urgent re-check'
+          ],
+          evidenceFromRecordAr: [
+            'إصابة بالسكري والضغط لأكثر من 5 سنوات ترفع القابلية لاعتلال الكلى',
+            'ضرورة مراجعة وظائف الكلى ومعدل الترشيح eGFR قبل العملية'
+          ],
+          discriminatingQuestions: [
+            {
+              question: 'Has the patient noticed any decrease in daily urine volume or new swelling around the ankles since starting Ibuprofen?',
+              questionAr: 'هل لاحظ المريض نقصاً في كمية البول اليومية أو انتفاخاً وتورماً جديداً في الكاحلين منذ بدء تناول البروفين؟'
             }
           ]
         }
@@ -548,24 +736,68 @@ Patient: Does this mean surgery will be rescheduled? Are there temporary bridge 
       ],
       smartQuestion: {
         id: 'sq-501',
-        question: 'Does the planned procedure have high bleeding risk, or will spinal/epidural anesthesia be utilized?',
-        questionAr: 'هل الجراحة المجدولة تعتبر عالية خطورة النزيف، وهل تتضمن الخطة التخديرية وخزاً نصفي الشوكي (Spinal/Epidural)؟',
+        question: 'Given that Apixaban was taken at 07:00 AM today, what is the patient’s exact Creatinine Clearance (CrCl), and has the surgery been postponed by at least 48 to 72 hours per Saudi Anesthesia Society protocols?',
+        questionAr: 'نظراً لتناول حبة أبيكسابان الساعة 07:00 صباح اليوم، ما هو معدل تصفية الكرياتينين (CrCl) بدقة، وهل تم تأجيل العملية لـ 48 إلى 72 ساعة وفق أدلة الجمعية السعودية للتخدير؟',
         options: ['نعم', 'لا', 'غير متأكد']
       },
       clinicalPossibilities: [
         {
           id: 'pos-501',
-          name: 'Active Anticoagulation State (High Perioperative Bleeding Risk)',
-          nameAr: 'حالة تميع دم نشطة مع خطر نزيف جراحي مرتفع',
+          name: 'Active Direct Oral Anticoagulant (DOAC) State with Critical Hemorrhagic & Neuraxial Hematoma Risk',
+          nameAr: 'حالة تميع دم نشطة بمضادات التخثر الفموية المباشرة (خطر نزيف جراحي وتجمع دموي نخاعي حاد)',
           likelihood: 'Higher likelihood',
-          evidenceFromConversation: ['Patient confirmed taking Apixaban 5mg at 07:00 AM today'],
-          evidenceFromConversationAr: ['المريض أكد بلع حبة أبيكسابان 5 ملجم الساعة 07:00 صباحاً اليوم'],
-          evidenceFromRecord: ['Active Apixaban 5mg prescription in NGHA record since 2024'],
-          evidenceFromRecordAr: ['وصفة أبيكسابان 5 ملجم مسجلة بنظام الحرس الوطني منذ 2024'],
+          probability: 92,
+          evidenceFromConversation: [
+            'Patient confirmed taking Apixaban 5mg at 07:00 AM today with breakfast',
+            'Full systemic anticoagulation active for the next 24 to 48 hours',
+            'Strict contraindication to neuraxial block (spinal/epidural) and major incision'
+          ],
+          evidenceFromConversationAr: [
+            'المريض أكد بلع حبة أبيكسابان 5 ملجم الساعة 07:00 صباح اليوم مع الفطور',
+            'استمرار الفاعلية التخثرية الكاملة بالدورة الدموية خلال 24 إلى 48 ساعة القادمة',
+            'موانع مطلقة لإبرة الظهر النصفية (Spinal/Epidural) والشقوق الجراحية النازفة'
+          ],
+          evidenceFromRecord: [
+            'Active Apixaban 5mg prescription in NGHA record since 2024',
+            'Absence of documented reversal agent (Andexanet Alfa) order'
+          ],
+          evidenceFromRecordAr: [
+            'وصفة أبيكسابان 5 ملجم مسجلة بنظام الحرس الوطني منذ 2024',
+            'عدم وجود طلب لمضاد الإبطال النوعي (Andexanet alfa) لحالات الطوارئ'
+          ],
           discriminatingQuestions: [
             {
-              question: 'Is the patient’s renal function normal (Creatinine Clearance > 50 mL/min)?',
-              questionAr: 'هل وظائف الكلى سليمة (تصفية الكرياتينين أكثر من 50 مل/دقيقة) لضمان سرعة تصريف الدواء؟'
+              question: 'Is the scheduled surgery elective (permitting a 48-hour deferral) and does it involve spinal/epidural anesthesia or high bleeding risk?',
+              questionAr: 'هل الجراحة المجدولة اختيارية تسمح بالتأجيل الآمن لمدة 48 ساعة، وهل تتضمن تخديراً نخاعياً (إبرة ظهر) أو خطورة نزيف عالية؟'
+            }
+          ]
+        },
+        {
+          id: 'pos-502',
+          name: 'Thromboembolic vs Bleeding Risk Imbalance (Indication for Structured Cessation Window & Bridging Assessment)',
+          nameAr: 'اضطراب توازن التخثر والنزيف (الحاجة لجدولة إيقاف زمنية دقيقة وتقييم الحاجة لجسور الهيبارين)',
+          likelihood: 'Moderate likelihood',
+          probability: 65,
+          evidenceFromConversation: [
+            'Patient raises concern regarding surgery postponement and temporary bridging alternatives',
+            'Need to weigh stroke risk vs intraoperative catastrophic hemorrhage'
+          ],
+          evidenceFromConversationAr: [
+            'استفسار المريض عن إمكانية تأجيل العملية وتوافر بدائل مؤقتة لمنع التجلط',
+            'ضرورة موازنة خطورة الجلطة القلبية والدماغية مقابل خطر النزيف الجراحي'
+          ],
+          evidenceFromRecord: [
+            'Cardiology indication for anticoagulation on file (CHA2DS2-VASc score evaluation)',
+            'Renal function dictates exact elimination clearance rate (CrCl)'
+          ],
+          evidenceFromRecordAr: [
+            'استطباب قلبي موثق لصرف السيولة (يتطلب حساب مؤشر الخطورة CHA2DS2-VASc)',
+            'وظائف الكلى تحدد سرعة تصريف وتصفية الدواء من الجسم (CrCl)'
+          ],
+          discriminatingQuestions: [
+            {
+              question: 'What is the patient’s calculated Creatinine Clearance (CrCl), and is the patient at high thrombotic risk requiring low-molecular-weight heparin (LMWH) bridge therapy?',
+              questionAr: 'ما هو معدل تصفية الكرياتينين (CrCl) لدى المريض، وهل تستدعي خطورة التجلط استخدام إبر سيولة مؤقتة كجسر علاجي؟'
             }
           ]
         }
@@ -653,24 +885,68 @@ Patient: Yes, I always get carsick and nauseated, and I am a strict non-smoker.`
       ],
       smartQuestion: {
         id: 'sq-601',
-        question: 'Does the patient have any known intolerance to antiemetic agents such as Ondansetron, Dexamethasone, or Metoclopramide?',
-        questionAr: 'هل سبق أن حدث للمريض أي تحسس أو اضطراب في نبضات القلب بعد أخذ أدوية مانعة للغثيان مثل أوندانسيترون أو ديكساميثازون؟',
+        question: 'With an Apfel Score of 3/4 (high PONV risk >60%), has multimodal antiemetic prophylaxis (Dexamethasone + 5-HT3 antagonist) and Total Intravenous Anesthesia (TIVA Propofol) been incorporated into the anesthesia plan?',
+        questionAr: 'نظراً لبلوغ مؤشر أبفل 3/4 (خطورة قيء تفوق 60%)، هل تم تضمين الوقاية متعددة الوسائط (ديكساميثازون + أوندانسيترون) واعتماد التخدير الوريدي الكلي (TIVA بالبروبوفول) ضمن خطة التخدير؟',
         options: ['نعم', 'لا', 'غير متأكد']
       },
       clinicalPossibilities: [
         {
           id: 'pos-601',
-          name: 'High-Risk Post-Operative Nausea and Vomiting (Apfel Score 3)',
-          nameAr: 'احتمالية مرتفعة جداً للقيء والغثيان بعد التخدير (مؤشر أبفل = 3)',
+          name: 'High-Risk Post-Operative Nausea & Vomiting (Apfel Score 3/4 - High Vulnerability to Volatile Anesthetics)',
+          nameAr: 'خطورة عالية جداً للقيء والغثيان التالي للتخدير الجراحي (مؤشر أبفل = 3/4 وحساسية شديدة لغازات التخدير)',
           likelihood: 'Higher likelihood',
-          evidenceFromConversation: ['Prior severe PONV lasting 2 days', 'Motion sickness confirmed', 'Non-smoker status'],
-          evidenceFromConversationAr: ['قيء مستمر ليومين في الجراحة السابقة', 'تأكيد دوار الحركة بالمركبات', 'غير مدخن إطلاقاً'],
-          evidenceFromRecord: ['Appendectomy in 2023 with prolonged discharge notes'],
-          evidenceFromRecordAr: ['جراحة سابقة عام 2023 مع ملاحظات خروج متأخر بسبب الجفاف'],
+          probability: 88,
+          evidenceFromConversation: [
+            'Prior severe intractable PONV lasting 48 hours requiring extended hospital admission and IV fluids',
+            'Confirmed lifelong susceptibility to motion sickness in vehicles',
+            'Confirmed strict non-smoker status (three major Apfel risk factors present > 60% probability)'
+          ],
+          evidenceFromConversationAr: [
+            'سوابق قيء مستعصٍ استمر 48 ساعة بعد الجراحة السابقة واستدعى تمديد التنويم وسوائل وريدية',
+            'تأكيد القابلية المزمنة لدوار الحركة والغثيان في المركبات',
+            'تأكيد كونه غير مدخن إطلاقاً (اكتمال 3 معايير رئيسية في مقياس أبفل ترتفع معها الخطورة لما يفوق 60%)'
+          ],
+          evidenceFromRecord: [
+            '2023 Appendectomy discharge summary noting severe dehydration secondary to post-op emesis',
+            'No documentation of prior prophylactic antiemetics in previous anesthesia record'
+          ],
+          evidenceFromRecordAr: [
+            'تقرير خروج جراحة الزائدة 2023 يوثق جفافاً حاداً نتيجة القيء بعد التخدير',
+            'عدم استخدام بروتوكول وقائي متعدد الوسائط في الجراحة السابقة'
+          ],
           discriminatingQuestions: [
             {
-              question: 'Is multimodal antiemetic prophylaxis (dual/triple therapy) included in the surgical anesthesia plan?',
-              questionAr: 'هل تم إدراج خطة وقائية متعددة الوسائط (ديكساميثازون + أوندانسيترون) في خطة التخدير الجراحي؟'
+              question: 'Does the current anesthesia plan mandate Total Intravenous Anesthesia (TIVA with Propofol) and complete avoidance of inhaled nitrous oxide/volatile agents?',
+              questionAr: 'هل تتضمن خطة التخدير الحالية اعتماد التخدير الوريدي الكلي (TIVA بالبروبوفول) والاستغناء التام عن غازات التخدير الاستنشاقية وأكسيد النيتروز؟'
+            }
+          ]
+        },
+        {
+          id: 'pos-602',
+          name: 'Severe Post-Operative Dehydration & Electrolyte Derangement Risk (Hypokalemia & Prerenal Azotemia Secondary to Intractable Emesis)',
+          nameAr: 'خطر الجفاف الشديد واضطراب الشوارد الكهربائية (نقص البوتاسيوم وقصور كلوي ما قبل كلوي ناجم عن تكرار القيء)',
+          likelihood: 'Moderate likelihood',
+          probability: 68,
+          evidenceFromConversation: [
+            'Inability to maintain oral fluid intake for 2 full days in prior surgical admission',
+            'Heightened psychological anxiety regarding anesthesia repeating the metabolic exhaustion'
+          ],
+          evidenceFromConversationAr: [
+            'عجز المريض التام عن شرب السوائل لمدة يومين كاملين في عمليته السابقة',
+            'قلق وتوتر نفسي شديد من تكرار الإجهاد الاستقلابي والجفاف في الجراحة القادمة'
+          ],
+          evidenceFromRecord: [
+            'Patient is a diabetic on Metformin (dehydration substantially elevates metabolic and renal risk)',
+            'Prior need for supplementary IV crystalloids documented'
+          ],
+          evidenceFromRecordAr: [
+            'إصابة المريض بالسكري وعلاجه بالميتفورمين (الجفاف يرفع بشدة مخاطر الحماض والقصور الكلوي)',
+            'توثيق الحاجة لمحاليل وريدية تعويضية مكثفة في السجل السابق'
+          ],
+          discriminatingQuestions: [
+            {
+              question: 'Is a combination multimodal prophylaxis scheduled (Dexamethasone 4-8mg IV at induction + Ondansetron 4mg IV at emergence, plus IV hydration)?',
+              questionAr: 'هل تم إقرار خطة وقائية مركبة متعددة الوسائط (ديكساميثازون 4-8 ملجم بالوريد عند بدء التخدير + أوندانسيترون 4 ملجم قبل الإفاقة وترطيب وريدي كافٍ)؟'
             }
           ]
         }

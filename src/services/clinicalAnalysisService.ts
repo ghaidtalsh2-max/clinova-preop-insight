@@ -170,8 +170,8 @@ MANDATORY CLINICAL KNOWLEDGE REFERENCES TO INCORPORATE (RAG GROUNDING):
 Directives:
 1. EXTRACTED INFORMATION: extract the EXACT symptoms, duration, triggers, medications, and allergies actually mentioned in the TRANSCRIPT. If the patient mentions "غثيان وصداع", extract Nausea and Headache (غثيان وصداع)!
 2. WHAT NEEDS ATTENTION: 2 to 3 high-yield clinical safety items corresponding to the actual conversation.
-3. SMART QUESTION: generate EXACTLY ONE targeted clarifying question with options ["نعم", "لا", "غير متأكد"].
-4. CLINICAL POSSIBILITIES (RAG GROUNDED): calculate percentage probabilities (10-95%) and qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood") strictly grounded in the dialogue, patient history, and retrieved clinical references. For each possibility, provide 1 to 2 discriminating questions.
+3. SMART QUESTION: generate EXACTLY ONE targeted clarifying question with options ["نعم", "لا", "غير متأكد"] that directly addresses the core diagnostic, perioperative safety, or clarifying dilemma of this specific scenario.
+4. CLINICAL POSSIBILITIES (RAG GROUNDED): MUST provide AT LEAST 2 (minimum 2, ideally 2 to 3) distinct, highly scenario-specific clinical differential diagnoses directly addressing the primary complaint and dilemma in the scenario. NEVER provide only one diagnosis. Calculate realistic percentage probabilities (10-95%) and qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood") strictly grounded in the dialogue, patient history, and retrieved clinical references. For EVERY possibility, provide 1 to 2 discriminating questions specifically designed to differentiate between the hypotheses.
 5. CLINICAL REFERENCES: cite 2 to 3 applicable references from the mandatory list.
 6. Return STRICTLY valid JSON without markdown fences.
 
@@ -208,7 +208,19 @@ JSON Schema:
       "name": "English",
       "nameAr": "عربي",
       "likelihood": "Higher likelihood",
-      "probability": 82,
+      "probability": 84,
+      "evidenceFromConversation": ["..."],
+      "evidenceFromConversationAr": ["..."],
+      "evidenceFromRecord": [],
+      "evidenceFromRecordAr": [],
+      "discriminatingQuestions": [{"question": "English", "questionAr": "عربي"}]
+    },
+    {
+      "id": "pos-2",
+      "name": "English",
+      "nameAr": "عربي",
+      "likelihood": "Moderate likelihood",
+      "probability": 64,
       "evidenceFromConversation": ["..."],
       "evidenceFromConversationAr": ["..."],
       "evidenceFromRecord": [],
@@ -335,14 +347,85 @@ function fallbackClinicalAnalysis(
 ): ClinicalAnalysisResponse {
   const normText = (transcript || '').toLowerCase();
 
-  // Dynamic Symptom & Entity Detection
+  // 1. Prioritize Direct Matching of Preset Clinical Scenarios
+  const matchedScenario = PRESET_CLINICAL_SCENARIOS.find((s) => {
+    // Exact or partial transcript overlap
+    if (s.transcriptAr && (normText.includes(s.transcriptAr.slice(0, 32).toLowerCase()) || s.transcriptAr.toLowerCase().includes(normText.slice(0, 32)))) return true;
+    if (s.transcriptEn && (normText.includes(s.transcriptEn.slice(0, 32).toLowerCase()) || s.transcriptEn.toLowerCase().includes(normText.slice(0, 32)))) return true;
+
+    // Distinct clinical signature matching
+    if (s.id === 'scen-orthostatic-htn' && (normText.includes('أملوديبين') || (normText.includes('دوخة') && (normText.includes('وقوف') || normText.includes('أقف') || normText.includes('السرير') || normText.includes('ناسي'))))) return true;
+    if (s.id === 'scen-ecg-retrieval' && (normText.includes('فهد الطبية') || normText.includes('kfmc') || (normText.includes('تخطيط') && (normText.includes('ريثم') || normText.includes('أشهر') || normText.includes('تراكمي') || normText.includes('فحوصات'))))) return true;
+    if (s.id === 'scen-allergy-conflict' && (normText.includes('بنسلين') || normText.includes('penicillin')) && (normText.includes('ما عندي') || normText.includes('نهائياً') || normText.includes('الحرس') || normText.includes('ngha') || normText.includes('صدمة') || normText.includes('تأقية') || normText.includes('نفي'))) return true;
+    if (s.id === 'scen-nsaid-renal-gi' && (normText.includes('بروفين') || normText.includes('إيبوبروفين') || normText.includes('ibuprofen') || (normText.includes('ركبة') && (normText.includes('حرقة') || normText.includes('معدة'))))) return true;
+    if (s.id === 'scen-anticoagulant-timing' && (normText.includes('apixaban') || normText.includes('أبيكسابان') || normText.includes('eliquis') || (normText.includes('سيولة') && (normText.includes('صباح') || normText.includes('أخذت حبة') || normText.includes('تتأجل'))))) return true;
+    if (s.id === 'scen-ponv-prevention' && (normText.includes('دوار الحركة') || normText.includes('خايف من البنج') || normText.includes('خايف') || normText.includes('استفرغ') || normText.includes('ponv') || normText.includes('أبفل') || (normText.includes('غثيان') && normText.includes('سنتين')))) return true;
+
+    return false;
+  });
+
+  if (matchedScenario) {
+    const baseAnalysis = JSON.parse(JSON.stringify(matchedScenario.analysis));
+
+    // Ground with retrieved Clinical Knowledge Base references
+    if (retrievedKnowledge && retrievedKnowledge.length > 0) {
+      baseAnalysis.clinicalReferences = retrievedKnowledge.slice(0, 3).map((ref) => ({
+        tag: ref.citationTag,
+        titleAr: ref.titleAr,
+        titleEn: ref.titleEn,
+        rationaleAr: ref.roleInClinovaAr,
+        rationaleEn: ref.roleInClinovaEn,
+        url: ref.url
+      }));
+    }
+
+    // Adjust probabilities based on liveClarifications and answeredQuestion
+    if (baseAnalysis.clinicalPossibilities && baseAnalysis.clinicalPossibilities.length > 0) {
+      let topProb = baseAnalysis.clinicalPossibilities[0]?.probability || 84;
+      let secondProb = baseAnalysis.clinicalPossibilities[1]?.probability || 64;
+      let thirdProb = baseAnalysis.clinicalPossibilities[2]?.probability || 38;
+
+      const hasYes =
+        liveClarifications?.some((c) => c.answer === 'yes') ||
+        answeredQuestion?.answer === 'نعم' ||
+        answeredQuestion?.answer === 'Yes';
+      const hasNo =
+        liveClarifications?.some((c) => c.answer === 'no') ||
+        answeredQuestion?.answer === 'لا' ||
+        answeredQuestion?.answer === 'No';
+
+      if (hasYes) {
+        topProb = Math.min(95, topProb + 6);
+        secondProb = Math.max(30, secondProb - 8);
+        thirdProb = Math.max(20, thirdProb - 10);
+      } else if (hasNo) {
+        topProb = Math.max(50, topProb - 16);
+        secondProb = Math.min(88, secondProb + 12);
+        thirdProb = Math.min(65, thirdProb + 10);
+      }
+
+      baseAnalysis.clinicalPossibilities.forEach((pos: any, idx: number) => {
+        if (idx === 0) {
+          pos.probability = topProb;
+          pos.likelihood = topProb >= 75 ? 'Higher likelihood' : 'Moderate likelihood';
+        } else if (idx === 1) {
+          pos.probability = secondProb;
+          pos.likelihood = secondProb >= 70 ? 'Higher likelihood' : 'Moderate likelihood';
+        } else {
+          pos.probability = thirdProb;
+          pos.likelihood = 'Lower likelihood';
+        }
+      });
+    }
+
+    return normalizeAnalysisResponse(baseAnalysis);
+  }
+
+  // 2. Dynamic Symptom & Entity Detection (For free-form clinician dictation)
   const hasHeadache = normText.includes('صداع') || normText.includes('headache');
   const hasNausea = normText.includes('غثيان') || normText.includes('ترجيع') || normText.includes('استفراغ') || normText.includes('nausea');
   const hasChestPain = normText.includes('صدر') || normText.includes('قلب') || normText.includes('chest pain');
-  const hasAllergy = normText.includes('بنسلين') || normText.includes('حساسية') || normText.includes('allergy') || normText.includes('penicillin');
-  const hasDizziness = normText.includes('دوخة') || normText.includes('دوار') || normText.includes('dizziness');
 
-  // If specific symptoms like Nausea / Headache are mentioned, build dynamic analysis
   if (hasHeadache || hasNausea || hasChestPain) {
     const symptomsList: { text: string; textAr: string }[] = [];
     if (hasHeadache) symptomsList.push({ text: 'Headache', textAr: 'صداع' });
@@ -456,142 +539,100 @@ function fallbackClinicalAnalysis(
     });
   }
 
-  // If keyword matches preset scenarios
-  const match = PRESET_CLINICAL_SCENARIOS.find((s) => {
-    const keywords = (s.titleAr + ' ' + s.titleEn).toLowerCase();
-    if (hasDizziness && keywords.includes('دوخة')) return true;
-    if (hasAllergy && (keywords.includes('بنسلين') || keywords.includes('حساسية'))) return true;
-    if (normText.includes('سيولة') && keywords.includes('سيولة')) return true;
-    if (normText.includes('فتق') && keywords.includes('فتق')) return true;
-    if (normText.includes('سكر') && keywords.includes('سكر')) return true;
-    return false;
-  });
+  // 3. Fallback General Preoperative Assessment (Guarantees AT LEAST 2 differentials and targeted discriminating questions)
+  const safeMedications = patient.medications || [];
+  const safeAllergies = patient.allergies || [];
+  const safeChronic = patient.chronicConditions || [];
 
-  if (!match) {
-    const safeMedications = patient.medications || [];
-    const safeAllergies = patient.allergies || [];
-    const safeChronic = patient.chronicConditions || [];
-
-    return normalizeAnalysisResponse({
-      extractedInformation: {
-        symptoms: [{ text: 'Clinical Consultation Notes', textAr: 'أعراض وملاحظات سريرية مستجدة' }],
-        duration: 'غير محدد بدقة',
-        trigger: 'قيد الاستقصاء السريري',
-        medications: safeMedications.slice(0, 1).map((m) => ({ name: m.name, status: 'verified' })),
-        allergies: safeAllergies.map((a) => a.substanceAr),
-        relevantHistory: safeChronic.map((c) => c.nameAr)
+  return normalizeAnalysisResponse({
+    extractedInformation: {
+      symptoms: [{ text: 'Clinical Consultation Notes', textAr: 'أعراض وملاحظات سريرية مستجدة' }],
+      duration: 'غير محدد بدقة',
+      trigger: 'قيد الاستقصاء السريري',
+      medications: safeMedications.slice(0, 1).map((m) => ({ name: m.name, status: 'verified' })),
+      allergies: safeAllergies.map((a) => a.substanceAr),
+      relevantHistory: safeChronic.map((c) => c.nameAr)
+    },
+    patientMemoryMatches: safeMedications.slice(0, 1).map((m) => ({
+      category: 'medication',
+      matchedEntity: m.name,
+      matchedEntityAr: m.name,
+      source: m.sector,
+      statement: 'Documented active medication in EHR',
+      statementAr: 'دواء موثق بالسجل الطبي الموحد'
+    })),
+    whatNeedsAttention: [
+      {
+        id: 'att-gen-1',
+        category: 'متابعة سريرية',
+        categoryAr: 'متابعة سريرية',
+        title: 'مراجعة العلامات الحيوية ومطابقة التاريخ الدوائي للمريض قبل الجراحة',
+        titleAr: 'مراجعة العلامات الحيوية ومطابقة التاريخ الدوائي للمريض قبل الجراحة',
+        severity: 'medium'
       },
-      patientMemoryMatches: safeMedications.slice(0, 1).map((m) => ({
-        category: 'medication',
-        matchedEntity: m.name,
-        matchedEntityAr: m.name,
-        source: m.sector,
-        statement: 'Documented active medication in EHR',
-        statementAr: 'دواء موثق بالسجل الطبي الموحد'
-      })),
-      whatNeedsAttention: [
-        {
-          id: 'att-gen-1',
-          category: 'متابعة سريرية',
-          categoryAr: 'متابعة سريرية',
-          title: 'مراجعة العلامات الحيوية ومطابقة التاريخ الدوائي للمريض',
-          titleAr: 'مراجعة العلامات الحيوية ومطابقة التاريخ الدوائي للمريض',
-          severity: 'medium'
-        }
-      ],
-      smartQuestion: {
-        id: 'sq-gen-1',
-        question: 'Does the patient have any other associated symptoms or recent medication changes?',
-        questionAr: 'هل يعاني المريض من أي أعراض مصاحبة أخرى أو تغييرات دوائية حديثة؟',
-        options: ['نعم', 'لا', 'غير متأكد']
+      {
+        id: 'att-gen-2',
+        category: 'سلامة التخدير',
+        categoryAr: 'سلامة التخدير',
+        title: 'التحقق من قائمة الحساسية الدوائية وسوابق التخدير السابقة',
+        titleAr: 'التحقق من قائمة الحساسية الدوائية وسوابق التخدير السابقة',
+        severity: 'medium'
+      }
+    ],
+    smartQuestion: {
+      id: 'sq-gen-1',
+      question: 'Does the patient have any other associated symptoms, recent medication changes, or prior anesthesia complications?',
+      questionAr: 'هل يعاني المريض من أي أعراض مصاحبة أخرى، أو تغييرات دوائية حديثة، أو مضاعفات في تخدير سابق؟',
+      options: ['نعم', 'لا', 'غير متأكد']
+    },
+    clinicalPossibilities: [
+      {
+        id: 'pos-gen-1',
+        name: 'Comprehensive Preoperative Assessment & Medication Reconciliation',
+        nameAr: 'تقييم سريري شامل ومطابقة دوائية ما قبل الجراحة',
+        likelihood: 'Higher likelihood',
+        probability: 78,
+        evidenceFromConversation: ['Reported symptoms during clinical consultation'],
+        evidenceFromConversationAr: ['أعراض مستجدة أثناء المعاينة السريرية'],
+        evidenceFromRecord: safeChronic.map((c) => c.nameAr),
+        evidenceFromRecordAr: safeChronic.map((c) => c.nameAr),
+        discriminatingQuestions: [
+          {
+            question: 'Are the symptoms constant throughout the day or intermittent with exertion?',
+            questionAr: 'هل الأعراض مستمرة طوال اليوم أم متقطعة وتظهر مع بذل المجهود؟'
+          }
+        ]
       },
-      clinicalPossibilities: [
-        {
-          id: 'pos-gen-1',
-          name: 'General Clinical Review / Follow-up',
-          nameAr: 'تقييم سريري شامل ومتابعة الحالة',
-          likelihood: 'Higher likelihood',
-          probability: 78,
-          evidenceFromConversation: ['Reported symptoms during clinical consultation'],
-          evidenceFromConversationAr: ['أعراض مستجدة أثناء المعاينة السريرية'],
-          evidenceFromRecord: safeChronic.map((c) => c.nameAr),
-          evidenceFromRecordAr: safeChronic.map((c) => c.nameAr),
-          discriminatingQuestions: [
-            {
-              question: 'Are the symptoms constant or intermittent?',
-              questionAr: 'هل الأعراض مستمرة طوال اليوم أم متقطعة؟'
-            }
-          ]
-        }
-      ],
-      clinicalSummary: {
-        en: 'Clinical evaluation pending full diagnostic workup.',
-        ar: 'معاينة سريرية أولية — يوصى بمراجعة العلامات الحيوية والتاريخ الدوائي.'
-      },
-      clinicalReferences: (retrievedKnowledge && retrievedKnowledge.length > 0 ? retrievedKnowledge : []).slice(0, 3).map((ref) => ({
-        tag: ref.citationTag,
-        titleAr: ref.titleAr,
-        titleEn: ref.titleEn,
-        rationaleAr: ref.roleInClinovaAr,
-        url: ref.url
-      }))
-    });
-  }
-
-  const baseAnalysis = JSON.parse(JSON.stringify(match.analysis));
-
-  // Ground with retrieved Clinical Knowledge Base references
-  if (retrievedKnowledge && retrievedKnowledge.length > 0) {
-    baseAnalysis.clinicalReferences = retrievedKnowledge.slice(0, 3).map((ref) => ({
+      {
+        id: 'pos-gen-2',
+        name: 'Subclinical Cardiovascular / Metabolic Risk Screening',
+        nameAr: 'فحص ومتابعة عوامل الخطورة القلبية والأيضية الكامنة',
+        likelihood: 'Moderate likelihood',
+        probability: 58,
+        evidenceFromConversation: ['Active consultation prior to planned surgery'],
+        evidenceFromConversationAr: ['جلسة تقييم سريري استباقية للعملية المجدولة'],
+        evidenceFromRecord: safeMedications.slice(0, 1).map((m) => m.name),
+        evidenceFromRecordAr: safeMedications.slice(0, 1).map((m) => m.name),
+        discriminatingQuestions: [
+          {
+            question: 'Has the patient had any baseline ECG changes or uncontrolled blood sugar spikes recently?',
+            questionAr: 'هل طرأت أي تغيرات حديثة على تخطيط القلب أو قراءات سكر الدم الصيامي؟'
+          }
+        ]
+      }
+    ],
+    clinicalSummary: {
+      en: 'Clinical evaluation pending full diagnostic workup. Baseline vitals and medication reconciliation recommended.',
+      ar: 'معاينة سريرية أولية — يوصى بمراجعة العلامات الحيوية والمطابقة الدوائية الشاملة.'
+    },
+    clinicalReferences: (retrievedKnowledge && retrievedKnowledge.length > 0 ? retrievedKnowledge : []).slice(0, 3).map((ref) => ({
       tag: ref.citationTag,
       titleAr: ref.titleAr,
       titleEn: ref.titleEn,
       rationaleAr: ref.roleInClinovaAr,
-      rationaleEn: ref.roleInClinovaEn,
       url: ref.url
-    }));
-  }
-
-  // Adjust probabilities based on liveClarifications and answeredQuestion
-  if (baseAnalysis.clinicalPossibilities && baseAnalysis.clinicalPossibilities.length > 0) {
-    let topProb = 82;
-    let secondProb = 68;
-    let thirdProb = 45;
-
-    const hasYes =
-      liveClarifications?.some((c) => c.answer === 'yes') ||
-      answeredQuestion?.answer === 'نعم' ||
-      answeredQuestion?.answer === 'Yes';
-    const hasNo =
-      liveClarifications?.some((c) => c.answer === 'no') ||
-      answeredQuestion?.answer === 'لا' ||
-      answeredQuestion?.answer === 'No';
-
-    if (hasYes) {
-      topProb = 88;
-      secondProb = 60;
-      thirdProb = 35;
-    } else if (hasNo) {
-      topProb = 68;
-      secondProb = 65;
-      thirdProb = 48;
-    }
-
-    baseAnalysis.clinicalPossibilities.forEach((pos: any, idx: number) => {
-      if (idx === 0) {
-        pos.probability = topProb;
-        pos.likelihood = topProb >= 75 ? 'Higher likelihood' : 'Moderate likelihood';
-      } else if (idx === 1) {
-        pos.probability = secondProb;
-        pos.likelihood = secondProb >= 70 ? 'Higher likelihood' : 'Moderate likelihood';
-      } else {
-        pos.probability = thirdProb;
-        pos.likelihood = 'Lower likelihood';
-      }
-    });
-  }
-
-  return normalizeAnalysisResponse(baseAnalysis);
+    }))
+  });
 }
 
 /**
