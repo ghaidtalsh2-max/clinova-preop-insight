@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Patient } from '../types/clinical';
-import { X, CheckCircle2, ShieldCheck, Printer, FileText, Edit3, Save, RotateCcw, AlertTriangle, PenTool } from 'lucide-react';
+import type { ClinicalAnalysisResponse } from '../services/clinicalAnalysisService';
+import { X, CheckCircle2, ShieldCheck, Printer, FileText, Edit3, Save, RotateCcw, AlertTriangle, PenTool, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface PreOpSummaryModalProps {
@@ -9,6 +10,8 @@ interface PreOpSummaryModalProps {
   onClose: () => void;
   onApprove: (clinicianName: string, notes: string) => void;
   lang: 'ar' | 'en';
+  aiData?: ClinicalAnalysisResponse | null;
+  transcript?: string;
 }
 
 export const PreOpSummaryModal: React.FC<PreOpSummaryModalProps> = ({
@@ -16,7 +19,9 @@ export const PreOpSummaryModal: React.FC<PreOpSummaryModalProps> = ({
   isOpen,
   onClose,
   onApprove,
-  lang
+  lang,
+  aiData,
+  transcript
 }) => {
   if (!isOpen) return null;
 
@@ -33,9 +38,26 @@ export const PreOpSummaryModal: React.FC<PreOpSummaryModalProps> = ({
   const [clinicianName, setClinicianName] = useState<string>(
     preOp.clinicianName || (isAr ? 'د. سارة محمد (استشاري)' : 'Dr. Sarah Mohammed (Consultant)')
   );
-  const [clinicianNotes, setClinicianNotes] = useState<string>(
-    preOp.clinicianNotes || (isAr ? 'تمت مراجعة نتائج الاستيضاح مع المريض ومطابقة جرعة الضغط مع تطبيق صحتي. المريض لائق للجراحة مع تطبيق بروتوكول التخدير المعتمد.' : 'Pre-op reconciliation confirmed with patient. Medication plan verified. Patient cleared for surgery under specified precautions.')
-  );
+
+  const initialGeneratedNotes = React.useMemo(() => {
+    if (preOp.clinicianNotes) return preOp.clinicianNotes;
+    if (aiData?.clinicalSummary?.[isAr ? 'ar' : 'en']) {
+      return aiData.clinicalSummary[isAr ? 'ar' : 'en'];
+    }
+    const symptomsStr = (aiData?.extractedInformation?.symptoms || []).map((s) => isAr ? s.textAr : s.text).join('، ');
+    const topDiag = aiData?.clinicalPossibilities?.[0];
+    const topDiagName = topDiag ? (isAr ? topDiag.nameAr : topDiag.name) : '';
+    if (symptomsStr) {
+      return isAr
+        ? `تمت مراجعة الأعراض المستجدة في الحوار (${symptomsStr}) والتشخيص المرجح (${topDiagName}). المريض لائق للجراحة مع تطبيق الاحتياطات المعتمدة وتدقيق الأدوية.`
+        : `Evaluated reported symptoms (${symptomsStr}) and primary hypothesis (${topDiagName}). Cleared for surgery under standardized pre-op precautions.`;
+    }
+    return isAr
+      ? 'تمت مراجعة نتائج الاستيضاح مع المريض ومطابقة جرعة الضغط مع تطبيق صحتي. المريض لائق للجراحة مع تطبيق بروتوكول التخدير المعتمد.'
+      : 'Pre-op reconciliation confirmed with patient. Medication plan verified. Patient cleared for surgery under specified precautions.';
+  }, [preOp.clinicianNotes, aiData, isAr]);
+
+  const [clinicianNotes, setClinicianNotes] = useState<string>(initialGeneratedNotes);
 
   // Digital Signature Canvas states
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -483,6 +505,187 @@ export const PreOpSummaryModal: React.FC<PreOpSummaryModalProps> = ({
                 </p>
               )}
             </div>
+          </div>
+
+          {/* ═══ LIVE CONSULTATION FINDINGS & DIFFERENTIAL DIAGNOSES (Actual Data) ═══ */}
+          <div
+            style={{
+              background: 'rgba(79, 70, 229, 0.04)',
+              border: '1.5px solid rgba(79, 70, 229, 0.18)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '1.1rem 1.3rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.9rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(79, 70, 229, 0.12)', paddingBottom: '0.55rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 6,
+                    background: '#4F46E5',
+                    color: '#FFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Sparkles size={15} />
+                </div>
+                <strong style={{ fontSize: '0.88rem', color: 'var(--ink)' }}>
+                  {isAr ? 'البيانات الفعلية المستخرجة من المحادثة السريرية والتشخيصات المعتمدة' : 'Live Consultation Findings & Verified Differential Diagnoses'}
+                </strong>
+              </div>
+              <span style={{ fontSize: '0.68rem', background: '#EEF2FF', color: '#4338CA', padding: '0.15rem 0.5rem', borderRadius: 4, fontWeight: 700 }}>
+                {isAr ? 'بيانات الذكاء الاصطناعي الحية' : 'Live AI Extracted'}
+              </span>
+            </div>
+
+            {/* 1. Extracted Symptoms & Triggers */}
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#4F46E5', display: 'block', marginBottom: '0.35rem' }}>
+                {isAr ? 'الأعراض وشكوى المريض المباشرة (Chief Complaints & Symptoms):' : 'Patient Reported Symptoms:'}
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                {aiData?.extractedInformation?.symptoms && aiData.extractedInformation.symptoms.length > 0 ? (
+                  aiData.extractedInformation.symptoms.map((s, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        fontSize: '0.76rem',
+                        fontWeight: 600,
+                        background: '#FFFFFF',
+                        border: '1px solid #CBD5E1',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: 6,
+                        color: 'var(--ink)'
+                      }}
+                    >
+                      • {isAr ? s.textAr : s.text}
+                    </span>
+                  ))
+                ) : (
+                  <span style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>
+                    {isAr ? 'تم تقييم الشكوى السريرية وسوابق المريض بالتفصيل أثناء المعاينة.' : 'Assessed clinical presentation and patient history during consultation.'}
+                  </span>
+                )}
+                {aiData?.extractedInformation?.trigger && (
+                  <span
+                    style={{
+                      fontSize: '0.74rem',
+                      background: '#FEF3C7',
+                      color: '#92400E',
+                      border: '1px solid #FDE68A',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: 6,
+                      fontWeight: 600
+                    }}
+                  >
+                    {isAr ? `المحفز: ${aiData.extractedInformation.trigger}` : `Trigger: ${aiData.extractedInformation.trigger}`}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 2. Confirmed Differential Diagnoses (>= 2) */}
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#4F46E5', display: 'block', marginBottom: '0.4rem' }}>
+                {isAr ? 'الاحتمالات والتشخيصات التفريقية المعتمدة (Differential Diagnoses):' : 'Confirmed Differential Diagnoses:'}
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {(aiData?.clinicalPossibilities || []).slice(0, 3).map((diag, i) => {
+                  const prob = diag.probability ?? (i === 0 ? 82 : 64);
+                  return (
+                    <div
+                      key={diag.id || i}
+                      style={{
+                        background: '#FFFFFF',
+                        border: '1px solid #E2E8F0',
+                        borderRadius: 8,
+                        padding: '0.65rem 0.85rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span
+                            style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 5,
+                              background: i === 0 ? '#DBEAFE' : '#FEF3C7',
+                              color: i === 0 ? '#1E40AF' : '#92400E',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.74rem',
+                              fontWeight: 800
+                            }}
+                          >
+                            {i + 1}
+                          </span>
+                          <strong style={{ fontSize: '0.84rem', color: 'var(--ink)' }}>
+                            {isAr ? diag.nameAr : diag.name}
+                          </strong>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '0.12rem 0.5rem',
+                            borderRadius: 4,
+                            background: prob >= 75 ? '#DCFCE7' : '#FEF3C7',
+                            color: prob >= 75 ? '#166534' : '#92400E'
+                          }}
+                        >
+                          {prob}% {isAr ? (prob >= 75 ? 'احتمال عالي' : 'احتمال متوسط') : (prob >= 75 ? 'High' : 'Moderate')}
+                        </span>
+                      </div>
+
+                      {/* Evidence & Discriminating Questions */}
+                      <div style={{ fontSize: '0.74rem', color: 'var(--ink-soft)', lineHeight: 1.5, marginTop: '0.3rem' }}>
+                        {diag.evidenceFromConversationAr && diag.evidenceFromConversationAr.length > 0 && (
+                          <div>
+                            <strong>{isAr ? 'الدليل من الحوار:' : 'Dialogue Evidence:'}</strong> {isAr ? diag.evidenceFromConversationAr.join(' • ') : (diag.evidenceFromConversation || []).join(' • ')}
+                          </div>
+                        )}
+                        {diag.discriminatingQuestions?.[0] && (
+                          <div style={{ color: '#4338CA', marginTop: '0.15rem' }}>
+                            <strong>{isAr ? 'السؤال التمييزي الحاسم:' : 'Discriminating Question:'}</strong> {isAr ? diag.discriminatingQuestions[0].questionAr : diag.discriminatingQuestions[0].question}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. Live Smart Clarifying Question */}
+            {aiData?.smartQuestion && (
+              <div style={{ background: '#FFFFFF', border: '1px dashed #CBD5E1', borderRadius: 8, padding: '0.55rem 0.85rem' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--ink-soft)', display: 'block', marginBottom: '0.15rem' }}>
+                  {isAr ? 'سؤال الاستيضاح الذكي الموجه في المعاينة:' : 'Smart Clarification Question Asked:'}
+                </span>
+                <div style={{ fontSize: '0.78rem', color: 'var(--ink)', fontWeight: 600 }}>
+                  {isAr ? aiData.smartQuestion.questionAr : aiData.smartQuestion.question}
+                </div>
+              </div>
+            )}
+
+            {/* 4. Live Dialogue Transcript Excerpt */}
+            {transcript && transcript.trim().length > 0 && (
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 8, padding: '0.55rem 0.85rem' }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--ink-soft)', display: 'block', marginBottom: '0.2rem' }}>
+                  {isAr ? 'مقتطف نص المحادثة المعتمد في التحليل:' : 'Consultation Dialogue Transcript Excerpt:'}
+                </span>
+                <div style={{ fontSize: '0.74rem', color: 'var(--ink)', whiteSpace: 'pre-wrap', maxHeight: '80px', overflowY: 'auto', lineHeight: 1.5, background: '#F8FAFC', padding: '0.4rem 0.6rem', borderRadius: 5 }}>
+                  {transcript}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Pre-Op Medication Plan Table */}

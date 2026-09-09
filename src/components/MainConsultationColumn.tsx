@@ -67,6 +67,8 @@ interface Props {
   onOpenReportModal?: () => void;
   onOpenKnowledgeBase?: () => void;
   onUpdatePatientMemoryMatches?: (m: PatientMemoryMatchItem[]) => void;
+  aiData?: ClinicalAnalysisResponse | null;
+  onAiDataChange?: (data: ClinicalAnalysisResponse | null) => void;
   lang: 'ar' | 'en';
 }
 
@@ -77,6 +79,8 @@ export const MainConsultationColumn: React.FC<Props> = ({
   onOpenReportModal,
   onOpenKnowledgeBase,
   onUpdatePatientMemoryMatches,
+  aiData: externalAiData,
+  onAiDataChange,
   lang
 }) => {
   const isAr = lang === 'ar';
@@ -91,7 +95,21 @@ export const MainConsultationColumn: React.FC<Props> = ({
 
   /* ─── AI Analysis State ─── */
   const [analysisStatus, setAnalysisStatus] = useState<'idle' | 'processing' | 'extracted'>('idle');
-  const [aiData, setAiData] = useState<ClinicalAnalysisResponse | null>(null);
+  const [internalAiData, setInternalAiData] = useState<ClinicalAnalysisResponse | null>(null);
+  const aiData = externalAiData !== undefined ? externalAiData : internalAiData;
+  const setAiData = (
+    updater:
+      | ClinicalAnalysisResponse
+      | null
+      | ((prev: ClinicalAnalysisResponse | null) => ClinicalAnalysisResponse | null)
+  ) => {
+    setInternalAiData((prev) => {
+      const current = externalAiData !== undefined ? externalAiData : prev;
+      const next = typeof updater === 'function' ? updater(current) : updater;
+      onAiDataChange?.(next);
+      return next;
+    });
+  };
   const [smartAnswer, setSmartAnswer] = useState<string | null>(null);
   const [isScenariosOpen, setIsScenariosOpen] = useState(false);
   const scenarioBtnRef = useRef<HTMLButtonElement>(null);
@@ -297,9 +315,9 @@ export const MainConsultationColumn: React.FC<Props> = ({
     const isNo = ans === 'لا' || ans === 'No';
 
     // Recalculate probabilities immediately so AnimatedLikelihoodBar slides
-    setAiData((prev) => {
+    setAiData((prev: ClinicalAnalysisResponse | null) => {
       if (!prev) return prev;
-      const updated = prev.clinicalPossibilities.map((item) => {
+      const updated = prev.clinicalPossibilities.map((item: any) => {
         const curProb = item.probability ?? (item.likelihood === 'Higher likelihood' ? 82 : item.likelihood === 'Moderate likelihood' ? 68 : 45);
         if (item.id === possibilityId) {
           const newProb = isYes ? Math.min(96, curProb + 14) : isNo ? Math.max(25, curProb - 18) : curProb;
@@ -311,7 +329,7 @@ export const MainConsultationColumn: React.FC<Props> = ({
           return { ...item, probability: newProb, likelihood: newLk as any };
         }
       });
-      updated.sort((a, b) => (b.probability || 0) - (a.probability || 0));
+      updated.sort((a: any, b: any) => (b.probability || 0) - (a.probability || 0));
       return { ...prev, clinicalPossibilities: updated };
     });
   };

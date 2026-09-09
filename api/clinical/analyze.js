@@ -39,28 +39,21 @@ export default async function handler(req, res) {
     const systemPrompt = `You are Clinova AI, a specialized Pre-Operative Clinical Decision Support System and clinical dialogue understanding engine.
 Analyze the doctor-patient conversation in real time alongside the patient's Electronic Health Record (EHR).
 
-MANDATORY CLINICAL KNOWLEDGE REFERENCES TO INCORPORATE (RAG GROUNDING):
-1. MOH-SA-PROTOCOLS: Saudi Ministry of Health National Clinical Protocols.
-2. PHA-WEQAYA-2024: Saudi Public Health Authority (Weqaya) Chronic Disease & Metabolic Risk Guidelines.
-3. US-FDA-DRUGS: U.S. FDA Drug Safety, Black Box Warnings & Anticoagulant cessation windows.
-4. NICE-GUIDELINES: NICE Preoperative Tests Guidance (NG45).
-5. WHO-ICD-11: WHO International Classification of Diseases standard coding.
-6. WHO-AI-ETHICS-2021: Human oversight, clinician decision autonomy, and transparency.
-
-Directives:
-1. EXTRACTED INFORMATION: extract ACTUAL symptoms, duration, triggers, medications, allergies mentioned in the TRANSCRIPT.
-2. WHAT NEEDS ATTENTION: 2 to 3 high-yield clinical safety items.
-3. SMART QUESTION: generate EXACTLY ONE targeted clarifying question with options ["نعم", "لا", "غير متأكد"].
-4. CLINICAL POSSIBILITIES (RAG GROUNDED): calculate percentage probabilities (10-95%) and qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood") strictly grounded in the dialogue, patient history, and retrieved clinical references.
-5. CLINICAL REFERENCES: cite 2 to 3 applicable references.
-6. Return STRICTLY valid JSON without markdown fences.
+CRITICAL CLINICAL DIRECTIVES:
+1. PRIMARY FOCUS (LIVE TRANSCRIPT): The live doctor-patient dialogue is the PRIMARY SOURCE OF TRUTH. You MUST analyze the current chief complaints, acute symptoms, triggers, and statements spoken by the patient in the TRANSCRIPT first and foremost (e.g. abdominal cramps / "معص أو مغص بالبطن", stress / "توتر أو هاكاثون", nausea, chest pain, headache, etc.). NEVER ignore what the patient is actively complaining about in favor of past chronic history.
+2. EXTRACTED INFORMATION: extract the EXACT symptoms actually mentioned in the transcript.
+3. WHAT NEEDS ATTENTION: 2 to 3 high-yield clinical safety items addressing the active dialogue.
+4. SMART QUESTION: generate EXACTLY ONE targeted clarifying question with options ["نعم", "لا", "غير متأكد"] directly clarifying the active symptoms.
+5. CLINICAL POSSIBILITIES (MANDATORY >= 2): You MUST ALWAYS provide AT LEAST 2 (minimum 2, up to 3) distinct, scenario-specific clinical differential diagnoses explaining the patient's active symptoms from the transcript. NEVER return only 1 possibility. Calculate realistic probabilities (10-95%) and qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood"). Provide 1 to 2 discriminating questions for each.
+6. MANDATORY CLINICAL KNOWLEDGE REFERENCES (RAG): Cite 2 to 3 applicable references (MOH-SA-PROTOCOLS, PHA-WEQAYA-2024, US-FDA-DRUGS, NICE-GUIDELINES, WHO-ICD-11).
+7. Return STRICTLY valid JSON without markdown fences.
 
 JSON Schema:
 {
   "extractedInformation": {
     "symptoms": [{"text": "English", "textAr": "عربي"}],
-    "duration": "",
-    "trigger": "",
+    "duration": "...",
+    "trigger": "...",
     "medications": [],
     "allergies": [],
     "relevantHistory": []
@@ -85,10 +78,22 @@ JSON Schema:
   "clinicalPossibilities": [
     {
       "id": "pos-1",
-      "name": "English",
-      "nameAr": "عربي",
+      "name": "Primary Differential Diagnosis (English)",
+      "nameAr": "التشخيص التفريقي الأول (عربي)",
       "likelihood": "Higher likelihood",
       "probability": 82,
+      "evidenceFromConversation": ["..."],
+      "evidenceFromConversationAr": ["..."],
+      "evidenceFromRecord": [],
+      "evidenceFromRecordAr": [],
+      "discriminatingQuestions": [{"question": "English", "questionAr": "عربي"}]
+    },
+    {
+      "id": "pos-2",
+      "name": "Secondary Differential Diagnosis (English)",
+      "nameAr": "التشخيص التفريقي الثاني (عربي)",
+      "likelihood": "Moderate likelihood",
+      "probability": 64,
       "evidenceFromConversation": ["..."],
       "evidenceFromConversationAr": ["..."],
       "evidenceFromRecord": [],
@@ -124,7 +129,7 @@ JSON Schema:
           { role: 'system', content: systemPrompt },
           {
             role: 'user',
-            content: `PATIENT RECORD:\n${JSON.stringify(patient || {}, null, 2)}\n\nTRANSCRIPT:\n"""\n${transcript}\n"""\n\nLIVE CLARIFICATIONS:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\nRETRIEVED REFERENCES:\n${JSON.stringify(retrievedKnowledge || [], null, 2)}\n\nANSWERED QUESTION:\n${JSON.stringify(answeredQuestion || 'none')}`
+            content: `1. PRIMARY FOCUS - LIVE DOCTOR-PATIENT CONVERSATION:\n"""\n${transcript}\n"""\n\n2. LIVE CLARIFICATIONS FROM DIALOGUE:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\n3. ANSWERED QUESTION:\n${JSON.stringify(answeredQuestion || 'none')}\n\n4. BACKGROUND PATIENT EHR (SECONDARY CONTEXT):\nName: ${patient?.nameAr || patient?.name || 'Unknown'}\nAllergies: ${JSON.stringify(patient?.allergies || [])}\nChronic: ${JSON.stringify(patient?.chronicConditions || [])}\nMedications: ${JSON.stringify((patient?.medications || []).map(m => m.name))}\nScheduled Procedure: ${patient?.scheduledProcedureAr || patient?.scheduledProcedure || 'General Assessment'}\n\n5. RETRIEVED KNOWLEDGE REFERENCES (RAG):\n${JSON.stringify(retrievedKnowledge || [], null, 2)}`
           }
         ]
       })

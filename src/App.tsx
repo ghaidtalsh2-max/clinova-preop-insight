@@ -10,7 +10,7 @@ import { PreOpSummaryModal } from './components/PreOpSummaryModal';
 import { KnowledgeBaseModal } from './components/KnowledgeBaseModal';
 import { ApiKeysModal } from './components/ApiKeysModal';
 import SplashScreen from './components/SplashScreen';
-import type { PatientMemoryMatchItem } from './services/clinicalAnalysisService';
+import type { PatientMemoryMatchItem, ClinicalAnalysisResponse } from './services/clinicalAnalysisService';
 
 export const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState<boolean>(true);
@@ -24,6 +24,7 @@ export const App: React.FC = () => {
   const [isKnowledgeBaseModalOpen, setIsKnowledgeBaseModalOpen] = useState<boolean>(false);
   const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState<boolean>(false);
   const [_patientMemoryMatches, setPatientMemoryMatches] = useState<PatientMemoryMatchItem[]>([]);
+  const [aiData, setAiData] = useState<ClinicalAnalysisResponse | null>(null);
 
   const currentPatient = patients.find((p) => p.id === selectedPatientId) || patients[0];
   const [transcript, setTranscript] = useState<string>('');
@@ -43,6 +44,7 @@ export const App: React.FC = () => {
 
   const handleSelectPatient = (patientId: string) => {
     setSelectedPatientId(patientId);
+    setAiData(null);
     setPatients((prev) =>
       prev.map((p) => {
         if (p.id === patientId) {
@@ -120,6 +122,8 @@ export const App: React.FC = () => {
           patient={currentPatient}
           transcript={transcript}
           onChangeTranscript={setTranscript}
+          aiData={aiData}
+          onAiDataChange={setAiData}
           onOpenReportModal={() => setIsPreOpModalOpen(true)}
           onOpenKnowledgeBase={() => setIsKnowledgeBaseModalOpen(true)}
           onUpdatePatientMemoryMatches={setPatientMemoryMatches}
@@ -134,6 +138,8 @@ export const App: React.FC = () => {
 
       <PreOpSummaryModal
         patient={currentPatient}
+        aiData={aiData}
+        transcript={transcript}
         isOpen={isPreOpModalOpen}
         onClose={() => setIsPreOpModalOpen(false)}
         onApprove={handleApprovePreOp}

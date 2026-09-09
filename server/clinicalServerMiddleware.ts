@@ -140,7 +140,7 @@ Strict Extraction & Analysis Directives:
    - "Conflicting Information" (معلومات متعارضة)
    - "Potential Clinical Finding" (مؤشر سريري محتمل)
 4. SMART QUESTIONS: generate EXACTLY ONE targeted clarifying question at a time with options ["Yes", "No", "Not sure"] / ["نعم", "لا", "غير متأكد"].
-5. CLINICAL POSSIBILITIES (RAG GROUNDED): calculate percentage probabilities (10-95%) and qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood") strictly grounded in the retrieved clinical references and the clinician's live clarification responses. For each possibility, provide 1 to 2 discriminating questions to help differentiate competing diagnoses.
+5. CLINICAL POSSIBILITIES (MANDATORY >= 2): You MUST ALWAYS provide AT LEAST 2 (minimum 2, up to 3) distinct, scenario-specific clinical differential diagnoses explaining the patient's active symptoms from the transcript. NEVER return only 1 possibility. Calculate realistic probabilities (10-95%) and qualitative likelihoods ("Higher likelihood", "Moderate likelihood", "Lower likelihood"). Provide 1 to 2 discriminating questions for each.
 6. CLINICAL REFERENCES: cite 2 to 3 applicable references from the mandatory list above with tag, Arabic title, English title, rationale in Arabic and English, and official URL.
 7. Return STRICTLY valid JSON without markdown fences.
 
@@ -188,12 +188,28 @@ JSON Schema:
       "nameAr": "هبوط الضغط الانتصابي",
       "likelihood": "Higher likelihood",
       "likelihoodAr": "احتمالية مرتفعة",
+      "probability": 84,
       "evidenceFromConversation": ["Dizziness when standing up quickly", "Started 3 weeks ago"],
       "evidenceFromConversationAr": ["دوخة عند الوقوف بسرعة", "بدأت منذ 3 أسابيع"],
       "evidenceFromRecord": ["Hypertension", "Amlodipine medication"],
       "evidenceFromRecordAr": ["ارتفاع ضغط الدم", "علاج أملوديبين"],
       "discriminatingQuestions": [
         { "question": "Does the dizziness improve quickly after sitting or lying down?", "questionAr": "هل تتحسن الدوخة سريعاً بعد الجلوس أو الاستلقاء؟" }
+      ]
+    },
+    {
+      "id": "pos-2",
+      "name": "Antihypertensive Over-diuresis / Vasodilation",
+      "nameAr": "تأثير خافض للضغط مفرط أو توسع وعائي ناتج عن العلاج",
+      "likelihood": "Moderate likelihood",
+      "likelihoodAr": "احتمالية متوسطة",
+      "probability": 65,
+      "evidenceFromConversation": ["Dizziness onset during active treatment"],
+      "evidenceFromConversationAr": ["بدء الدوخة بالتزامن مع انتظام أخذ العلاج"],
+      "evidenceFromRecord": ["Documented Amlodipine 5mg daily"],
+      "evidenceFromRecordAr": ["أملوديبين 5 ملجم مسجل بالسجل"],
+      "discriminatingQuestions": [
+        { "question": "Do you feel lightheaded right after the morning dose?", "questionAr": "هل تشعر بالدوار مباشرة بعد جرعة الصباح؟" }
       ]
     }
   ],
@@ -217,10 +233,6 @@ JSON Schema:
       "rationaleAr": "تقييم مخاطر الأمراض المزمنة وضبط ضغط الدم لتفادي هبوط الدورة الدموية أثناء التخدير.",
       "rationaleEn": "Chronic disease risk stratification for perioperative safety.",
       "url": "https://www.pha.gov.sa/ar-sa/Healthportal/Pages/RiskFactor.aspx"
-    },
-    {
-      "tag": "US-FDA-DRUGS",
-      "titleAr": "قاعدة بيانات سلامة الأدوية — هيئة الغذاء والدواء (FDA)",
       "titleEn": "FDA Drugs Safety Database",
       "rationaleAr": "التحقق من الآثار الجانبية ومخاطر النزيف وهبوط الضغط المصاحب للأدوية الموصوفة.",
       "rationaleEn": "Pharmacovigilance checks on antihypertensive side effects and drug clearance.",
@@ -245,7 +257,7 @@ JSON Schema:
                     { role: 'system', content: systemPrompt },
                     {
                       role: 'user',
-                      content: `CURRENT PATIENT RECORD:\n${JSON.stringify(patient, null, 2)}\n\nLIVE CONVERSATION TRANSCRIPT:\n"""\n${transcript}\n"""\n\nLIVE CLARIFICATIONS FROM DIALOGUE:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\nRETRIEVED KNOWLEDGE BASE REFERENCES:\n${JSON.stringify(retrievedKnowledge || [], null, 2)}\n\nSELECTED DISCRIMINATING / SMART QUESTION: ${JSON.stringify(answeredQuestion || selectedOptionId || 'none')}`
+                      content: `1. PRIMARY FOCUS - LIVE DOCTOR-PATIENT CONVERSATION:\n"""\n${transcript}\n"""\n\n2. LIVE CLARIFICATIONS FROM DIALOGUE:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\n3. SELECTED DISCRIMINATING / SMART QUESTION: ${JSON.stringify(answeredQuestion || selectedOptionId || 'none')}\n\n4. BACKGROUND PATIENT EHR:\nName: ${patient?.nameAr || patient?.name}\nAllergies: ${JSON.stringify(patient?.allergies || [])}\nChronic: ${JSON.stringify(patient?.chronicConditions || [])}\nMedications: ${JSON.stringify((patient?.medications || []).map((m: any) => m.name))}\nScheduled Procedure: ${patient?.scheduledProcedureAr || patient?.scheduledProcedure}\n\n5. RETRIEVED KNOWLEDGE BASE REFERENCES:\n${JSON.stringify(retrievedKnowledge || [], null, 2)}`
                     }
                   ]
                 })
@@ -270,7 +282,7 @@ JSON Schema:
                       { role: 'system', content: systemPrompt },
                       {
                         role: 'user',
-                        content: `CURRENT PATIENT RECORD:\n${JSON.stringify(patient, null, 2)}\n\nLIVE CONVERSATION TRANSCRIPT:\n"""\n${transcript}\n"""\n\nLIVE CLARIFICATIONS FROM DIALOGUE:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\nRETRIEVED KNOWLEDGE BASE REFERENCES:\n${JSON.stringify(retrievedKnowledge || [], null, 2)}\n\nSELECTED DISCRIMINATING / SMART QUESTION: ${JSON.stringify(answeredQuestion || selectedOptionId || 'none')}`
+                        content: `1. PRIMARY FOCUS - LIVE DOCTOR-PATIENT CONVERSATION:\n"""\n${transcript}\n"""\n\n2. LIVE CLARIFICATIONS FROM DIALOGUE:\n${JSON.stringify(liveClarifications || [], null, 2)}\n\n3. SELECTED DISCRIMINATING / SMART QUESTION: ${JSON.stringify(answeredQuestion || selectedOptionId || 'none')}\n\n4. BACKGROUND PATIENT EHR:\nName: ${patient?.nameAr || patient?.name}\nAllergies: ${JSON.stringify(patient?.allergies || [])}\nChronic: ${JSON.stringify(patient?.chronicConditions || [])}\nMedications: ${JSON.stringify((patient?.medications || []).map((m: any) => m.name))}\nScheduled Procedure: ${patient?.scheduledProcedureAr || patient?.scheduledProcedure}\n\n5. RETRIEVED KNOWLEDGE BASE REFERENCES:\n${JSON.stringify(retrievedKnowledge || [], null, 2)}`
                       }
                     ]
                   })
